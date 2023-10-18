@@ -75,8 +75,8 @@ jobs:
           # { target: M5Core, build-type: MinSizeRel },
           # { target: M5Core, build-type: Debug },
 
-          { target: M5Core2, build-type: MinSizeRel },
-          { target: M5Core2, build-type: Debug },
+          #{ target: M5Core2, build-type: MinSizeRel },
+          #{ target: M5Core2, build-type: Debug },
 
           # { target: AtomS3, build-type: MinSizeRel },
           # { target: AtomS3, build-type: Debug },
@@ -93,8 +93,8 @@ jobs:
           # { target: XIAO_ESP32C3, build-type: MinSizeRel },
           # { target: XIAO_ESP32C3, build-type: Debug },
 
-          # { target: ESP32_S3_BLE, build-type: MinSizeRel },
-          # { target: ESP32_S3_BLE, build-type: Debug },
+           { target: ESP32_S3_BLE, build-type: MinSizeRel },
+           { target: ESP32_S3_BLE, build-type: Debug },
 
 
           # Community targets:
