@@ -169,3 +169,8 @@ jobs:
             ./build/*.hex
             ./build/*.bin
             ./build/*.dfu
+            ./build/bootloader/*.map
+            ./build/bootloader/*.elf
+            ./build/bootloader/*.hex
+            ./build/bootloader/*.bin
+            ./build/bootloader/*.dfu
