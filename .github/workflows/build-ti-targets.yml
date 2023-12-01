@@ -117,7 +117,7 @@ jobs:
         uses: devcontainers/ci@v0.3
         with:
           # The TI container
-          cacheFrom: ghcr.io/nanoframework/dev-container-ti
+          # cacheFrom: ghcr.io/nanoframework/dev-container-ti
           push: never
           runCmd: |
             # Build target:

@@ -4,7 +4,7 @@
 name: Build Dev Container for ChibiOS
 
 env:
-  GCR_IMAGE: ghcr.io/nanoframework/dev-container-chibios
+  GCR_IMAGE: dev-container-chibios
   GCR_FILE: .devcontainer/sources/Dockerfile.ChibiOS
 
 on:

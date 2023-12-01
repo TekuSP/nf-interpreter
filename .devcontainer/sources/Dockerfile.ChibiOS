@@ -7,7 +7,7 @@ RUN apt-get update \
     unzip \
     wget 
 
-ARG GCC_URI=https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu/12.3.rel1/binrel/arm-gnu-toolchain-12.3.rel1-x86_64-arm-none-eabi.tar.xz
+ARG GCC_URI=https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz
 RUN mkdir -p /tmp/dc-downloads /tmp/dc-extracted/gcc \
     && curl -o /tmp/dc-downloads/gcc-arm.tar.xz  $GCC_URI \
     && xz -d /tmp/dc-downloads/gcc-arm.tar.xz \
@@ -44,13 +44,15 @@ RUN apt-get update \
     srecord
 
 # Create needed directories
-RUN mkdir -p /usr/local/bin/gcc \
-    && mkdir -p /usr/local/bin/xtensa \
-    && mkdir -p /usr/local/bin/titools
+RUN mkdir -p /usr/local/bin/gcc
 
-# Clone repos for STM32
-RUN git clone --branch stable_21.11.x https://github.com/ArduPilot/ChibiOS.svn.git --depth 1 ./sources/ChibiOs \
-    && git clone --branch nf-build https://github.com/nanoframework/STM32CubeL4.git --depth 1 ./sources/STM32CubeL4 \
+# Clone ChibiOS repo
+# RUN git svn clone http://svn.code.sf.net/p/chibios/code/branches/stable_21.11.x -rHEAD ./sources/ChibiOs
+# Alternative source for those having issues with git svn downloads:
+RUN git clone --branch stable_21.11.x https://github.com/ArduPilot/ChibiOS.svn.git --depth 1 ./sources/ChibiOs
+
+# Clone support repos for STM32 including AzureRTOS
+RUN git clone --branch nf-build https://github.com/nanoframework/STM32CubeL4.git --depth 1 ./sources/STM32CubeL4 \
     && git clone --branch nf-build https://github.com/nanoframework/STM32CubeF7.git --depth 1 ./sources/STM32CubeF7 \
     && git clone --branch nf-build https://github.com/nanoframework/STM32CubeF4.git --depth 1 ./sources/STM32CubeF4 \
     && git clone --branch nf-build https://github.com/nanoframework/STM32CubeH7.git --depth 1 ./sources/STM32CubeH7 \
@@ -58,15 +60,15 @@ RUN git clone --branch stable_21.11.x https://github.com/ArduPilot/ChibiOS.svn.g
 
 # Clone mbedtls and fatfs
 RUN git clone --branch mbedtls-2.28.2 https://github.com/ARMmbed/mbedtls.git --depth 1 ./sources/mbedtls \
-    && git clone --branch R0.14b https://github.com/abbrev/fatfs.git --depth 1 ./sources/fatfs \
+    && git clone --branch R0.15 https://github.com/abbrev/fatfs.git --depth 1 ./sources/fatfs \
     && git clone --branch nf-build https://github.com/nanoframework/spiffs.git --depth 1 ./sources/spiffs
 
 # set gcc location
-ENV ARM_GCC_PATH=/usr/local/bin/gcc
-ENV PATH=$ARM_GCC_PATH/bin:${PATH}
+ARG TMP_GCC_PATH=/usr/local/bin/gcc
+ENV ARM_GCC_PATH=$TMP_GCC_PATH/bin
 
 # Copy from our other container
-COPY --from=downloader /tmp/dc-extracted/gcc $ARM_GCC_PATH
+COPY --from=downloader /tmp/dc-extracted/gcc $TMP_GCC_PATH
 COPY --from=downloader /tmp/dc-extracted/cmake /usr/bin/cmake
 
 ENV PATH=/usr/bin/cmake/bin:${PATH}
