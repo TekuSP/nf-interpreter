@@ -81,7 +81,8 @@ jobs:
             # Move into the .devcontainer directory
             pushd .devcontainer
 
-            # fix if needed.
+            # Change to the available devcontainer image, so we target the source instead (which takes a little longer to build).
+            sed -i -- 's|"dockerFile": "Dockerfile.All"|"dockerFile": "sources/Dockerfile.All"|g' devcontainer.json
 
             # Move out of the .devcontainer directory
             popd
@@ -97,7 +98,7 @@ jobs:
         uses: devcontainers/ci@v0.3
         with:
           # The ChibiOS container
-          cacheFrom: ghcr.io/nanoframework/dev-container-all
+          # cacheFrom: ghcr.io/nanoframework/dev-container-all
           push: never
           runCmd: |
             # Build target:

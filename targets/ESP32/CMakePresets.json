@@ -143,6 +143,7 @@
                 "NF_FEATURE_RTC": "ON",
                 "NF_FEATURE_HAS_SDCARD": "ON",
                 "API_System.IO.FileSystem": "ON",
+                "API_System.Device.I2c.Slave": "OFF",
                 "API_nanoFramework.Device.OneWire": "ON",
                 "API_nanoFramework.Device.Bluetooth": "ON"
             }
@@ -163,6 +164,7 @@
                 "NF_FEATURE_RTC": "ON",
                 "NF_FEATURE_HAS_SDCARD": "ON",
                 "API_System.IO.FileSystem": "ON",
+                "API_System.Device.I2c.Slave": "OFF",
                 "API_nanoFramework.Device.OneWire": "ON",
                 "API_nanoFramework.Device.Bluetooth": "ON"
             }
@@ -187,7 +189,8 @@
                 "NF_FEATURE_HAS_SDCARD": "OFF",
                 "API_System.IO.FileSystem": "ON",
                 "API_Windows.Storage": "ON",
-                "API_System.Device.I2s": "OFF"
+                "API_System.Device.I2s": "OFF",
+                "API_System.Device.I2c.Slave": "OFF"
             }
         },
         {
@@ -300,7 +303,9 @@
                 "GRAPHICS_DISPLAY_INTERFACE": "Spi_To_Display.cpp",
                 "TOUCHPANEL_INTERFACE": "Spi_To_TouchPanel.cpp",
                 "API_nanoFramework.Device.Bluetooth": "ON",
-                "ESP32_RESERVED_RAM_FOR_IDF_ALLOCATION": "180"
+                "API_System.Device.I2c.Slave": "ON",
+                "ESP32_RESERVED_RAM_FOR_IDF_ALLOCATION": "180",
+                "ESP32_SPIRAM_FOR_IDF_ALLOCATION": "1024 * 1024"
             }
         },
         {
@@ -426,7 +431,8 @@
                 "API_Windows.Storage": "ON",
                 "API_nanoFramework.Device.OneWire": "OFF",
                 "API_nanoFramework.Device.Bluetooth": "OFF",
-                "API_nanoFramework.Graphics": "OFF"
+                "API_nanoFramework.Graphics": "OFF",
+                "API_System.Device.I2c.Slave": "OFF"
             }
         },
         {
@@ -502,6 +508,7 @@
                 "ETH_PHY_RST_GPIO": "5",
                 "ETH_RMII_CLK_OUT_GPIO": "17",
                 "API_System.IO.FileSystem": "ON",
+                "API_System.Device.I2c.Slave": "OFF",
                 "API_nanoFramework.Device.OneWire": "ON"
             }
         },
@@ -525,7 +532,8 @@
                 "ETH_PHY_RST_GPIO": "12",
                 "ETH_RMII_CLK_OUT_GPIO": "17",
                 "API_System.IO.FileSystem": "ON",
-                "API_nanoFramework.Device.OneWire": "ON"
+                "API_nanoFramework.Device.OneWire": "ON",
+                "API_System.Device.I2c.Slave": "OFF"
             }
         },
         {
@@ -545,6 +553,7 @@
                 "API_System.IO.FileSystem": "ON",
                 "API_nanoFramework.Device.OneWire": "ON",
                 "API_nanoFramework.Graphics": "ON",
+                "API_System.Device.I2c.Slave": "OFF",
                 "GRAPHICS_DISPLAY": "ST7789V_240x320_SPI.cpp",
                 "TOUCHPANEL_DEVICE": "XPT2046.cpp",
                 "GRAPHICS_DISPLAY_INTERFACE": "Spi_To_Display.cpp",
@@ -568,6 +577,7 @@
                 "NF_FEATURE_RTC": "OFF",
                 "NF_FEATURE_HAS_SDCARD": "OFF",
                 "API_System.IO.FileSystem": "OFF",
+                "API_System.Device.I2c.Slave": "OFF",
                 "API_nanoFramework.Graphics": "ON",
                 "API_nanoFramework.Device.OneWire": "OFF",
                 "API_nanoFramework.Device.Bluetooth": "ON",
@@ -600,7 +610,8 @@
                 "ETH_PHY_ADDR": "1",
                 "API_System.IO.FileSystem": "ON",
                 "API_nanoFramework.Device.OneWire": "ON",
-                "API_nanoFramework.Device.Bluetooth": "ON"
+                "API_nanoFramework.Device.Bluetooth": "ON",
+                "API_System.Device.I2c.Slave": "OFF"
             }
         },
         {
@@ -623,7 +634,8 @@
                 "ETH_PHY_ADDR": "1",
                 "ETH_PHY_RST_GPIO": "16",
                 "API_System.IO.FileSystem": "ON",
-                "API_nanoFramework.Device.OneWire": "ON"
+                "API_nanoFramework.Device.OneWire": "ON",
+                "API_System.Device.I2c.Slave": "OFF"
             }
         },
         {
@@ -671,6 +683,7 @@
                 "API_System.IO.FileSystem": "ON",
                 "API_nanoFramework.Device.OneWire": "ON",
                 "API_nanoFramework.Graphics": "ON",
+                "API_System.Device.I2c.Slave": "OFF",
                 "GRAPHICS_DISPLAY": "ST7735S_SPI.cpp",
                 "TOUCHPANEL_DEVICE": "XPT2046.cpp",
                 "GRAPHICS_DISPLAY_INTERFACE": "Spi_To_Display.cpp",
@@ -695,6 +708,7 @@
                 "NF_FEATURE_RTC": "ON",
                 "API_System.IO.FileSystem": "ON",
                 "API_nanoFramework.Device.OneWire": "ON",
+                "API_System.Device.I2c.Slave": "OFF",
                 "API_nanoFramework.Graphics": "ON",
                 "GRAPHICS_DISPLAY": "ST7789V_240x320_SPI.cpp",
                 "TOUCHPANEL_DEVICE": "XPT2046.cpp",

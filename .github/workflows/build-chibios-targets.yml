@@ -79,8 +79,8 @@ jobs:
           # { target: MBN_QUAIL, build-type: MinSizeRel },
           # { target: MBN_QUAIL, build-type: Debug },
 
-          { target: NESHTEC_NESHNODE_V1, build-type: MinSizeRel },
-          { target: NESHTEC_NESHNODE_V1, build-type: Debug },
+          # { target: NESHTEC_NESHNODE_V1, build-type: MinSizeRel },
+          # { target: NESHTEC_NESHNODE_V1, build-type: Debug },
 
           # { target: NETDUINO3_WIFI, build-type: MinSizeRel },
           # { target: NETDUINO3_WIFI, build-type: Debug },
@@ -158,7 +158,7 @@ jobs:
         uses: devcontainers/ci@v0.3
         with:
           # The ChibiOS container
-          cacheFrom: ghcr.io/nanoframework/dev-container-chibios
+          # cacheFrom: ghcr.io/nanoframework/dev-container-chibios:latest
           push: never
           runCmd: |
             # Build target:

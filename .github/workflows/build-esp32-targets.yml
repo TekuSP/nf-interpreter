@@ -75,8 +75,8 @@ jobs:
           # { target: M5Core, build-type: MinSizeRel },
           # { target: M5Core, build-type: Debug },
 
-          #{ target: M5Core2, build-type: MinSizeRel },
-          #{ target: M5Core2, build-type: Debug },
+          { target: ESP32_S3_BLE, build-type: MinSizeRel },
+          { target: ESP32_S3_BLE, build-type: Debug },
 
           # { target: AtomS3, build-type: MinSizeRel },
           # { target: AtomS3, build-type: Debug },
@@ -133,10 +133,10 @@ jobs:
             pushd .devcontainer
 
             # target the ESP32 container for a quicker build
-            sed -i -- 's|"dockerFile": "Dockerfile.All"|"dockerFile": "Dockerfile.ESP32"|g' devcontainer.json
+            # sed -i -- 's|"dockerFile": "Dockerfile.All"|"dockerFile": "Dockerfile.ESP32"|g' devcontainer.json
 
             # But if needed, we could change to the available devcontainer image, so we target the source instead (which takes a little longer to build).
-            # sed -i -- 's|"dockerFile": "Dockerfile.All"|"dockerFile": "sources/Dockerfile.ESP32"|g' devcontainer.json
+            sed -i -- 's|"dockerFile": "Dockerfile.All"|"dockerFile": "sources/Dockerfile.ESP32"|g' devcontainer.json
 
             # Move out of the .devcontainer directory
             popd
@@ -152,7 +152,7 @@ jobs:
         uses: devcontainers/ci@v0.3
         with:
           # The ESP32 container
-          cacheFrom: ghcr.io/nanoframework/dev-container-esp32
+          # cacheFrom: ghcr.io/nanoframework/dev-container-esp32
           push: never
           runCmd: |
             # Build target:
