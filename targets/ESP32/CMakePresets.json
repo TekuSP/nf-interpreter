@@ -304,8 +304,8 @@
                 "TOUCHPANEL_INTERFACE": "Spi_To_TouchPanel.cpp",
                 "API_nanoFramework.Device.Bluetooth": "ON",
                 "API_System.Device.I2c.Slave": "ON",
-                "ESP32_RESERVED_RAM_FOR_IDF_ALLOCATION": "380",
-                "ESP32_SPIRAM_FOR_IDF_ALLOCATION": "8192 * 1024"
+                "ESP32_RESERVED_RAM_FOR_IDF_ALLOCATION": "180",
+                "ESP32_SPIRAM_FOR_IDF_ALLOCATION": "4096 * 1024"
             }
         },
         {
