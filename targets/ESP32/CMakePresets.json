@@ -299,7 +299,7 @@
                 "ESP32_USB_CDC": "ON",
                 "API_nanoFramework.Graphics": "ON",
                 "GRAPHICS_DISPLAY_INTERFACE": "Spi_To_Display.cpp",
-                "GRAPHICS_DISPLAY": "Generic_SPI.cpp",
+                "GRAPHICS_DISPLAY": "GC9A01_MELLOW_240x240_SPI.cpp",
                 "TOUCHPANEL_DEVICE": "CST816S.cpp",
                 "TOUCHPANEL_INTERFACE": "Spi_To_TouchPanel.cpp",
                 "API_nanoFramework.Device.Bluetooth": "ON",
