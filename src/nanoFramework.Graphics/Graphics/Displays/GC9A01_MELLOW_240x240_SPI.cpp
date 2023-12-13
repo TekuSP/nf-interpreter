@@ -154,6 +154,7 @@ bool DisplayDriver::Initialize()
     g_DisplayInterface.SendCommand(3, 0x98, 0x3E, 0x07);
     g_DisplayInterface.SendCommand(1, 0x35);
     g_DisplayInterface.SendCommand(1, GC9A01_CMD::DisplayInversionOff);
+    g_DisplayInterface.SendCommand(2, 0xE8, 0x34);
 
     g_DisplayInterface.SendCommand(1, GC9A01_CMD::SleepOut);
     OS_DELAY(120);
