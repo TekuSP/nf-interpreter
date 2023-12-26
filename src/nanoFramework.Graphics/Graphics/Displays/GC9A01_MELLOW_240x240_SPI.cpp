@@ -21,6 +21,7 @@ Full datasheet at https://www.waveshare.com/w/upload/5/5e/GC9A01A.pdf
 struct DisplayDriver g_DisplayDriver;
 extern DisplayInterface g_DisplayInterface;
 extern DisplayInterfaceConfig g_DisplayInterfaceConfig;
+CLR_UINT8 orientationByte;
 
 enum GC9A01_CMD : CLR_UINT8
 {
@@ -86,7 +87,9 @@ enum GC9A01_MEMORY_ACCESS_CTRL : CLR_UINT8
     Portrait = 0x18,
     Portrait180 = 0x28,
     Landscape = 0x48,
-    Landscape180 = 0x88
+    Landscape180 = 0x88,
+    MirrorX = 0x40,
+    MirrorY = 0x80
 };
 
 void DisplayDriver::SetupDisplayAttributes()
@@ -104,54 +107,67 @@ void DisplayDriver::SetupDisplayAttributes()
 bool DisplayDriver::Initialize()
 {
     SetupDisplayAttributes();
-      g_DisplayInterface.SendCommand(0, 0xfe)
-      g_DisplayInterface.SendCommand(0, 0xef)
-      g_DisplayInterface.SendCommand(1,0xeb, 0x14)
-      g_DisplayInterface.SendCommand( 1,0x84, 0x60)
-      g_DisplayInterface.SendCommand(1,0x86, 0xff)
-      g_DisplayInterface.SendCommand(1,0x87, 0xff)
-      g_DisplayInterface.SendCommand(1,0x8e, 0xff)
-      g_DisplayInterface.SendCommand(1,0x8f, 0xff)
-      g_DisplayInterface.SendCommand(1,0x88, 0x0a)
-      g_DisplayInterface.SendCommand(1,0x89, 0x23)
-      g_DisplayInterface.SendCommand(1,0x8a, 0x00)
-      g_DisplayInterface.SendCommand(1,0x8b, 0x80)
-      g_DisplayInterface.SendCommand(1,0x8c, 0x01)
-      g_DisplayInterface.SendCommand(1,0x8d, 0x03)
-      g_DisplayInterface.SendCommand(4,0x90, 0x08, 0x08, 0x08, 0x08)
-      g_DisplayInterface.SendCommand(3,0xff, 0x60, 0x01, 0x04)
-      g_DisplayInterface.SendCommand(1,0xC3, 0x13),
-      g_DisplayInterface.SendCommand(1,0xC4, 0x13)
-      g_DisplayInterface.SendCommand(1,0xC9, 0x30)
-      g_DisplayInterface.SendCommand(1,0xbe, 0x11)
-      g_DisplayInterface.SendCommand(2,0xe1, 0x10, 0x0e)
-      g_DisplayInterface.SendCommand(3,0xdf, 0x21, 0x0c, 0x02)
-    // Set gamma
-      g_DisplayInterface.SendCommand(6,0xF0, 0x45, 0x09, 0x08, 0x08, 0x26, 0x2a)
-      g_DisplayInterface.SendCommand(6,0xF1, 0x43, 0x70, 0x72, 0x36, 0x37, 0x6f)
-      g_DisplayInterface.SendCommand(6,0xF2, 0x45, 0x09, 0x08, 0x08, 0x26, 0x2a)
-      g_DisplayInterface.SendCommand(6,0xF3, 0x43, 0x70, 0x72, 0x36, 0x37, 0x6f)
-      g_DisplayInterface.SendCommand(2, 0xed, 0x1b, 0x0b)
-      g_DisplayInterface.SendCommand(1,0xae, 0x77)
-      g_DisplayInterface.SendCommand(1,0xcd, 0x63)
-      g_DisplayInterface.SendCommand(9,0x70, 0x07, 0x07, 0x04, 0x0e, 0x0f, 0x09, 0x07, 0x08, 0x03)
-      g_DisplayInterface.SendCommand(1,0xE8, 0x34) // 4 dot inversion
-      g_DisplayInterface.SendCommand(8,0x60, 0x38, 0x0b, 0x6D, 0x6D, 0x39, 0xf0, 0x6D, 0x6D)
-      g_DisplayInterface.SendCommand(8,0x61, 0x38, 0xf4, 0x6D, 0x6D, 0x38, 0xf7, 0x6D, 0x6D)
-      g_DisplayInterface.SendCommand(12,0x62, 0x38, 0x0D, 0x71, 0xED, 0x70, 0x70, 0x38, 0x0F, 0x71, 0xEF, 0x70, 0x70)
-      g_DisplayInterface.SendCommand(12,0x63, 0x38, 0x11, 0x71, 0xF1, 0x70, 0x70, 0x38, 0x13, 0x71, 0xF3, 0x70, 0x70)
-      g_DisplayInterface.SendCommand(7,0x64, 0x28, 0x29, 0xF1, 0x01, 0xF1, 0x00, 0x07)
-      g_DisplayInterface.SendCommand(10,0x66, 0x3C, 0x00, 0xCD, 0x67, 0x45, 0x45, 0x10, 0x00, 0x00, 0x00)
-      g_DisplayInterface.SendCommand(10,0x67, 0x00, 0x3C, 0x00, 0x00, 0x00, 0x01, 0x54, 0x10, 0x32, 0x98)
-      g_DisplayInterface.SendCommand(7,0x74, 0x10, 0x45, 0x80, 0x00, 0x00, 0x4E, 0x00)
-      g_DisplayInterface.SendCommand(2,0x98, 0x3e, 0x07)
-      g_DisplayInterface.SendCommand(2,0x99, 0x3e, 0x07)
-      g_DisplayInterface.SendCommand(1, GC9A01_CMD::SleepOut);
+    g_DisplayInterface.SendCommand(1, 0xfe, 0);
+    g_DisplayInterface.SendCommand(1, 0xef, 0);
+    g_DisplayInterface.SendCommand(2, 0xEB, 0x14);
+    g_DisplayInterface.SendCommand(2, 0x84, 0x60);
+    g_DisplayInterface.SendCommand(2, 0x85, 0xFF);
+    g_DisplayInterface.SendCommand(2, 0x86, 0xFF);
+    g_DisplayInterface.SendCommand(2, 0x87, 0xFF);
+    g_DisplayInterface.SendCommand(2, 0x8E, 0xFF);
+    g_DisplayInterface.SendCommand(2, 0x8F, 0xFF);
+    g_DisplayInterface.SendCommand(2, 0x88, 0x0A);
+    g_DisplayInterface.SendCommand(2, 0x89, 0x23);
+    g_DisplayInterface.SendCommand(2, 0x8A, 0x00);
+    g_DisplayInterface.SendCommand(2, 0x8B, 0x80);
+    g_DisplayInterface.SendCommand(2, 0x8C, 0x01);
+    g_DisplayInterface.SendCommand(2, 0x8D, 0x03);
+    g_DisplayInterface.SendCommand(5, 0x90, 0x08, 0x08, 0x08, 0x08);
+    g_DisplayInterface.SendCommand(4, 0xff, 0x60, 0x01, 0x04);
+    g_DisplayInterface.SendCommand(2, 0XC3, 0x13);
+    g_DisplayInterface.SendCommand(2, 0XC4, 0x13);
+    g_DisplayInterface.SendCommand(2, 0XC9, 0x30);
+    g_DisplayInterface.SendCommand(2, 0xbe, 0x11);
+    g_DisplayInterface.SendCommand(3, 0xe1, 0x10, 0x0e);
+    g_DisplayInterface.SendCommand(4, 0xdf, 0x21, 0x0c, 0x02);
+
+    g_DisplayInterface.SendCommand(2, GC9A01_CMD::PixelFormatSet, GC9A01_PIXEL_FORMAT::Pixel16Bit);
+    g_DisplayInterface.SendCommand(5, 0x90, 0x08, 0x08, 0x08, 0x08);
+    g_DisplayInterface.SendCommand(2, 0xBD, 0x06);
+    g_DisplayInterface.SendCommand(2, 0xBC, 0x00);
+    g_DisplayInterface.SendCommand(4, 0xFF, 0x60, 0x01, 0x04);
+    g_DisplayInterface.SendCommand(2, GC9A01_CMD::Vreg1aVoltageControl, 0x13);
+    g_DisplayInterface.SendCommand(2, 0xC4, 0x13);
+    g_DisplayInterface.SendCommand(2, GC9A01_CMD::Vreg2aVoltageControl, 0x22);
+    g_DisplayInterface.SendCommand(2, 0xBE, 0x11);
+    g_DisplayInterface.SendCommand(3, 0xE1, 0x10, 0x0E);
+    g_DisplayInterface.SendCommand(4, 0xDF, 0x21, 0x0C, 0x02);
+    g_DisplayInterface.SendCommand(7, 0xF0, 0x45, 0x09, 0x08, 0x08, 0x26, 0x2A);
+    g_DisplayInterface.SendCommand(7, 0xF1, 0x43, 0x70, 0x72, 0x36, 0x37, 0x6F);
+    g_DisplayInterface.SendCommand(7, 0xF2, 0x45, 0x09, 0x08, 0x08, 0x26, 0x2A);
+    g_DisplayInterface.SendCommand(7, 0xF3, 0x43, 0x70, 0x72, 0x36, 0x37, 0x6F);
+    g_DisplayInterface.SendCommand(3, 0xED, 0x1B, 0x0B);
+    g_DisplayInterface.SendCommand(2, 0xAE, 0x77);
+    g_DisplayInterface.SendCommand(2, 0xCD, 0x63);
+    g_DisplayInterface.SendCommand(10, 0x70, 0x07, 0x07, 0x04, 0x0E, 0x0F, 0x09, 0x07, 0x08, 0x03);
+    g_DisplayInterface.SendCommand(2, GC9A01_CMD::FrameRate, 0x34);
+    g_DisplayInterface.SendCommand(1, 0xE8, 0x34); // 4 dot inversion
+    g_DisplayInterface.SendCommand(9 ,0x60, 0x38, 0x0b, 0x6D, 0x6D, 0x39, 0xf0, 0x6D, 0x6D),
+    g_DisplayInterface.SendCommand(9, 0x61, 0x38, 0xf4, 0x6D, 0x6D, 0x38, 0xf7, 0x6D, 0x6D),
+    g_DisplayInterface.SendCommand(13, 0x62, 0x18, 0x0D, 0x71, 0xED, 0x70, 0x70, 0x18, 0x0F, 0x71, 0xEF, 0x70, 0x70);
+    g_DisplayInterface.SendCommand(13, 0x63, 0x18, 0x11, 0x71, 0xF1, 0x70, 0x70, 0x18, 0x13, 0x71, 0xF3, 0x70, 0x70);
+    g_DisplayInterface.SendCommand(8, 0x64, 0x28, 0x29, 0xF1, 0x01, 0xF1, 0x00, 0x07);
+    g_DisplayInterface.SendCommand(11, 0x66, 0x3C, 0x00, 0xCD, 0x67, 0x45, 0x45, 0x10, 0x00, 0x00, 0x00);
+    g_DisplayInterface.SendCommand(11, 0x67, 0x00, 0x3C, 0x00, 0x00, 0x00, 0x01, 0x54, 0x10, 0x32, 0x98);
+    g_DisplayInterface.SendCommand(8, 0x74, 0x10, 0x85, 0x80, 0x00, 0x00, 0x4E, 0x00);
+    g_DisplayInterface.SendCommand(3, 0x98, 0x3E, 0x07);
+    g_DisplayInterface.SendCommand(1, 0x35);
+    g_DisplayInterface.SendCommand(1, GC9A01_CMD::DisplayInversionOn);
+
+    g_DisplayInterface.SendCommand(1, GC9A01_CMD::SleepOut);
     OS_DELAY(120);
     g_DisplayInterface.SendCommand(1, GC9A01_CMD::DisplayOn);
-    OS_DELAY(20);
-
-    
+    OS_DELAY(20);    
     return true;
 }
 
@@ -237,7 +253,7 @@ void DisplayDriver::SetDefaultOrientation()
 
 bool DisplayDriver::ChangeOrientation(DisplayOrientation orientation)
 {
-    CLR_UINT8 orientationByte = GC9A01_MEMORY_ACCESS_CTRL::Portrait;
+
     switch (orientation)
     {
         case DisplayOrientation::DisplayOrientation_Portrait:
@@ -253,11 +269,25 @@ bool DisplayDriver::ChangeOrientation(DisplayOrientation orientation)
             orientationByte = GC9A01_MEMORY_ACCESS_CTRL::Portrait180;
             break;
     }
-
+    if (true)
+    {
+        orientationByte = orientationByte | GC9A01_MEMORY_ACCESS_CTRL::MirrorX;
+    }  
+    else
+    {
+        orientationByte = orientationByte & ~GC9A01_MEMORY_ACCESS_CTRL::MirrorX;
+    } 
+    if (false)
+    {
+        orientationByte = orientationByte | GC9A01_MEMORY_ACCESS_CTRL::MirrorY;
+    }  
+    else
+    {
+        orientationByte = orientationByte & ~GC9A01_MEMORY_ACCESS_CTRL::MirrorY;
+    }
     g_DisplayInterface.SendCommand(2, GC9A01_CMD::MemoryAccessControl, orientationByte);
     return true;
 }
-
 CLR_UINT32 DisplayDriver::PixelsPerWord()
 {
     return (32 / Attributes.BitsPerPixel);
