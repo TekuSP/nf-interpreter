@@ -1,15 +1,15 @@
 {
-	"name": "nanoFramework-All",
-	// If you prefer, you can use the source files and adjust them where they are located,
-	// To do this, change the "dockerFile" to use 'Dockerfile.All.SRC'.
+	"name": "nanoFramework-ESP32",
+	// Adjust this file to choose the platform you want using the prebuild containers:
+	// To do this, change the "dockerFile" to use 'Dockerfile.ESP32.SRC'.
 	// This will allow you to customize and build the container source and add anything you may need on top.
-	"dockerFile": "Dockerfile.All",
+	"dockerFile": "Dockerfile.ESP32",
 	"context": ".",
 	"mounts": [
 		// Bind the Unix socket the Docker daemon listens on by default
 		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
 		// Keep command history 
-		"source=nano-bashhistory,target=/home/vscode/commandhistory,type=volume" // ,
+		"source=nano-bashhistory,target=/home/vscode/commandhistory,type=volume",
 		// OPTIONAL: Mount .azure folder for seamless az cli auth
 		// "source=${env:HOME}${env:USERPROFILE}/.azure,target=/home/vscode/.azure,type=bind"
 	],
@@ -17,9 +17,6 @@
 	"customizations": {
 		"vscode": {
 			"settings": {
-				"git.ignoredRepositories": [
-					"targets-community"
-                ],
 				"cmake.preferredGenerators": [
 					"Ninja"
 				],
@@ -39,24 +36,13 @@
 				"xaver.clang-format"
 			]
 		}
-	},
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "terraform --version",
-	// Use 'postStartCommand' to update the nf-community-targets submodule repo
-	// "postStartCommand": "git config --global --add safe.directory /workspaces/nf-interpreter && git submodule update --init",
+	}
 	// You can pull all the repos with the latest changes, this is only valid if you are using the ./sources/Dockerfile.All containers
 	// "postAttachCommand": "/usr/local/git-pull-repos.sh"
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "terraform --version",
-	// Use 'postStartCommand' to update the nf-community-targets submodule repo
-	// "postStartCommand": "git config --global --add safe.directory /workspaces/nf-interpreter && git submodule update --init",
-	// You can pull all the repos with the latest changes, this is only valid if you are using the ./sources/Dockerfile.All containers
-	// "postAttachCommand": "/usr/local/git-pull-repos.sh"
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
 	// Uncomment to connect as a non-root user. See https: //aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vscode"
+	// ,"remoteUser": "vscode"
 }
