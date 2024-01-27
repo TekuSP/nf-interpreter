@@ -153,6 +153,7 @@ jobs:
         with:
           # The ESP32 container
           # cacheFrom: ghcr.io/nanoframework/dev-container-esp32
+          configFile: ./.devcontainer/${{ matrix.container }}/devcontainer.json
           push: never
           runCmd: |
             # Build target:
