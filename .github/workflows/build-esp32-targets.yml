@@ -130,13 +130,13 @@ jobs:
       - name: Adjust devcontainer.json (ESP32-IDF)
         run: |
             # Move into the .devcontainer directory
-            pushd .devcontainer/ESP32
+            pushd .devcontainer/${{ matrix.container }}
 
             # target the ESP32 container for a quicker build
             # sed -i -- 's|"dockerFile": "Dockerfile.All"|"dockerFile": "Dockerfile.ESP32"|g' devcontainer.json
 
             # But if needed, we could change to the available devcontainer image, so we target the source instead (which takes a little longer to build).
-            sed -i -- 's|"dockerFile": "Dockerfile.All"|"dockerFile": "sources/Dockerfile.ESP32"|g' devcontainer.json
+            sed -i -- 's|"dockerFile": "Dockerfile.${{ matrix.container }}"|"dockerFile": "Dockerfile.${{ matrix.container }}.SRC"|g' devcontainer.json
 
             # Move out of the .devcontainer directory
             popd
