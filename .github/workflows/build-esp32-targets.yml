@@ -93,8 +93,8 @@ jobs:
           # { target: XIAO_ESP32C3, build-type: MinSizeRel },
           # { target: XIAO_ESP32C3, build-type: Debug },
 
-          # { target: ESP32_S3_BLE, build-type: MinSizeRel },
-          # { target: ESP32_S3_BLE, build-type: Debug },
+           { target: ESP32_S3_BLE, build-type: MinSizeRel },
+           { target: ESP32_S3_BLE, build-type: Debug },
 
 
           # Community targets:
@@ -169,3 +169,8 @@ jobs:
             ./build/*.hex
             ./build/*.bin
             ./build/*.dfu
+            ./build/bootloader/*.map
+            ./build/bootloader/*.elf
+            ./build/bootloader/*.hex
+            ./build/bootloader/*.bin
+            ./build/bootloader/*.dfu
