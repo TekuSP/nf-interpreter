@@ -5,9 +5,9 @@ on: # ESP32-IDF specific changes. We specifically ignore other (RTOS) target cha
     paths:
       - '!**/*.md'
       - '.github/workflows/build-esp32-targets.yml'
-      - '.devcontainer/sources/Dockerfile.ESP32'
-      - '.devcontainer/Dockerfile.ESP32'
-      - '.devcontainer/devcontainer.json'
+      - '.devcontainer/ESP32/Dockerfile.ESP32'
+      - '.devcontainer/ESP32/Dockerfile.ESP32'
+      - '.devcontainer/ESP32/devcontainer.json'
       - 'targets/ESP32/**'
       - 'targets-community/ESP32/**'
       - 'src/**'
@@ -19,9 +19,9 @@ on: # ESP32-IDF specific changes. We specifically ignore other (RTOS) target cha
     paths:
       - '!**/*.md'
       - '.github/workflows/build-esp32-targets.yml'
-      - '.devcontainer/sources/Dockerfile.ESP32'
-      - '.devcontainer/Dockerfile.ESP32'
-      - '.devcontainer/devcontainer.json'
+      - '.devcontainer/ESP32/Dockerfile.ESP32'
+      - '.devcontainer/ESP32/Dockerfile.ESP32'
+      - '.devcontainer/ESP32/devcontainer.json'
       - 'targets/ESP32/**'
       - 'targets-community/ESP32/**'
       - 'src/**'
@@ -130,7 +130,7 @@ jobs:
       - name: Adjust devcontainer.json (ESP32-IDF)
         run: |
             # Move into the .devcontainer directory
-            pushd .devcontainer
+            pushd .devcontainer/ESP32
 
             # target the ESP32 container for a quicker build
             # sed -i -- 's|"dockerFile": "Dockerfile.All"|"dockerFile": "Dockerfile.ESP32"|g' devcontainer.json
