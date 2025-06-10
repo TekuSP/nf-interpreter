@@ -10,8 +10,8 @@ function(nf_set_optimization_options target)
     # debug compile options: -Og (optimize for debugging) and -ggdb (produce debug symbols specifically for gdb)
     target_compile_options(${target} PRIVATE
         $<$<CONFIG:Debug>:-Og -ggdb>
-        $<$<CONFIG:Release>:-O3 -flto -ffat-lto-objects>
-        $<$<CONFIG:MinSizeRel>:-Os -flto -ffat-lto-objects>
+        $<$<CONFIG:Release>:-O3 -flto>
+        $<$<CONFIG:MinSizeRel>:-Os -flto>
         $<$<CONFIG:RelWithDebInfo>:-Os -ggdb>
     )
 
@@ -102,7 +102,7 @@ macro(nf_add_platform_packages)
         if(USE_NETWORKING_OPTION)
 
             find_package(NF_Network REQUIRED QUIET)
-            find_package(CHIBIOS_LWIP REQUIRED QUIET)
+            find_package(lwIP REQUIRED QUIET)
 
         endif()
 
@@ -125,6 +125,7 @@ macro(nf_add_platform_dependencies target)
                 ${CHIBIOS_HAL_INCLUDE_DIRS}
                 ${ChibiOSnfOverlay_INCLUDE_DIRS}
                 ${CHIBIOS_CONTRIB_INCLUDE_DIRS}
+                ${CHIBIOS_FATFS_INCLUDE_DIRS}
                 ${TARGET_CHIBIOS_COMMON_INCLUDE_DIRS}
                 ${TARGET_CHIBIOS_NANOCLR_INCLUDE_DIRS}
                 ${chibios_SOURCE_DIR}/os/hal/boards/${TARGET_BOARD})
@@ -137,6 +138,7 @@ macro(nf_add_platform_dependencies target)
                 ${CHIBIOS_HAL_INCLUDE_DIRS}
                 ${ChibiOSnfOverlay_INCLUDE_DIRS}
                 ${CHIBIOS_CONTRIB_INCLUDE_DIRS}
+                ${CHIBIOS_FATFS_INCLUDE_DIRS}
                 ${TARGET_CHIBIOS_COMMON_INCLUDE_DIRS}
                 ${TARGET_CHIBIOS_NANOCLR_INCLUDE_DIRS}
                 ${chibios_SOURCE_DIR}/os/hal/boards/${TARGET_BOARD})
@@ -151,7 +153,8 @@ macro(nf_add_platform_dependencies target)
                     ${CHIBIOS_HAL_INCLUDE_DIRS}
                     ${ChibiOSnfOverlay_INCLUDE_DIRS}
                     ${CHIBIOS_CONTRIB_INCLUDE_DIRS}
-                    ${CHIBIOS_LWIP_INCLUDE_DIRS}
+                    ${CHIBIOS_FATFS_INCLUDE_DIRS}
+                    ${lWIP_INCLUDE_DIRS}
                     ${TARGET_CHIBIOS_COMMON_INCLUDE_DIRS}
                     ${TARGET_CHIBIOS_NANOCLR_INCLUDE_DIRS}
                     ${chibios_SOURCE_DIR}/os/hal/boards/${TARGET_BOARD})
@@ -160,18 +163,28 @@ macro(nf_add_platform_dependencies target)
 
         endif()
 
+        if(API_nanoFramework.System.Security.Cryptography)
+            FetchContent_GetProperties(mbedtls)
+        endif()
+    
         nf_add_lib_native_assemblies(
+            EXTRA_SOURCES
+                ${CHIBIOS_FATFS_SOURCES}
+                ${SPIFFS_SOURCES}
             EXTRA_INCLUDES
                 ${CHIBIOS_INCLUDE_DIRS}
                 ${CHIBIOS_HAL_INCLUDE_DIRS}
                 ${${TARGET_STM32_CUBE_PACKAGE}_CubePackage_INCLUDE_DIRS}
                 ${ChibiOSnfOverlay_INCLUDE_DIRS}
                 ${CHIBIOS_CONTRIB_INCLUDE_DIRS}
-                ${CHIBIOS_LWIP_INCLUDE_DIRS}
+                ${lWIP_INCLUDE_DIRS}
+                ${CHIBIOS_FATFS_INCLUDE_DIRS}
                 ${SPIFFS_INCLUDE_DIRS}
                 ${TARGET_CHIBIOS_COMMON_INCLUDE_DIRS}
                 ${TARGET_CHIBIOS_NANOCLR_INCLUDE_DIRS}
-                ${chibios_SOURCE_DIR}/os/hal/boards/${TARGET_BOARD})
+                ${chibios_SOURCE_DIR}/os/hal/boards/${TARGET_BOARD}
+                ${mbedtls_SOURCE_DIR}/include
+                ${CMAKE_SOURCE_DIR}/src/PAL/COM/sockets/ssl/MbedTLS)
         
         add_dependencies(${target}.elf nano::NF_NativeAssemblies)
         
@@ -181,16 +194,16 @@ macro(nf_add_platform_dependencies target)
             nf_add_lib_network(
                 BUILD_TARGET
                     ${target}
-                EXTRA_SOURCES 
-                    ${TARGET_LWIP_SOURCES}
-                    ${CHIBIOS_LWIP_SOURCES}
+                EXTRA_SOURCES
+                    ${lWIP_SOURCES}
                 EXTRA_INCLUDES 
                     ${CHIBIOS_INCLUDE_DIRS}
                     ${CHIBIOS_HAL_INCLUDE_DIRS}
                     ${TARGET_CHIBIOS_COMMON_INCLUDE_DIRS}
                     ${TARGET_CHIBIOS_NANOCLR_INCLUDE_DIRS}
-                    ${CHIBIOS_LWIP_INCLUDE_DIRS}
+                    ${lWIP_INCLUDE_DIRS}
                     ${ChibiOSnfOverlay_INCLUDE_DIRS}
+                    ${CHIBIOS_FATFS_INCLUDE_DIRS}
                     ${CHIBIOS_CONTRIB_INCLUDE_DIRS}
                     ${${TARGET_STM32_CUBE_PACKAGE}_CubePackage_INCLUDE_DIRS}
                 EXTRA_COMPILE_DEFINITIONS -DHAL_USE_MAC=TRUE)
@@ -221,8 +234,9 @@ macro(nf_add_platform_include_directories target)
         ${${TARGET_STM32_CUBE_PACKAGE}_CubePackage_INCLUDE_DIRS}
         ${TARGET_CMSIS_COMMON_INCLUDE_DIRS}
         ${TARGET_CHIBIOS_COMMON_INCLUDE_DIRS}
-        ${CHIBIOS_LWIP_INCLUDE_DIRS}
+        ${lWIP_INCLUDE_DIRS}
         ${SPIFFS_INCLUDE_DIRS}
+
     )
     
     # includes specific to nanoBooter
@@ -231,7 +245,6 @@ macro(nf_add_platform_include_directories target)
         target_include_directories(${target}.elf PUBLIC
 
             ${TARGET_CHIBIOS_NANOBOOTER_INCLUDE_DIRS}
-    
         )
 
     endif()
@@ -257,7 +270,7 @@ macro(nf_add_platform_include_directories target)
                 ${CHIBIOS_CONTRIB_INCLUDE_DIRS}
                 ${${TARGET_STM32_CUBE_PACKAGE}_CubePackage_INCLUDE_DIRS}
                 ${TARGET_CHIBIOS_COMMON_INCLUDE_DIRS}
-                ${CHIBIOS_LWIP_INCLUDE_DIRS}
+                ${lWIP_INCLUDE_DIRS}
             )
 
         endif()
@@ -309,8 +322,6 @@ macro(nf_add_platform_sources target)
         target_sources(${target}.elf PUBLIC
             ${TARGET_CHIBIOS_NANOCLR_SOURCES}
             ${CHIBIOS_CONTRIB_SOURCES}
-            ${CHIBIOS_FATFS_SOURCES}
-            ${SPIFFS_SOURCES}
         )
 
         if(USE_NETWORKING_OPTION)

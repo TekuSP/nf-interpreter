@@ -949,7 +949,6 @@ class UnicodeString
 {
   private:
     CLR_RT_UnicodeHelper m_unicodeHelper;
-    CLR_RT_HeapBlock m_uHeapBlock;
     CLR_UINT16 *m_wCharArray;
     int m_length; /// Length in wide characters (not bytes).
 
@@ -1438,7 +1437,7 @@ struct CLR_RT_AppDomain : public CLR_RT_ObjectToEvent_Destination // EVENT HEAP 
     CLR_RT_DblLinkedList m_appDomainAssemblies;
     CLR_RT_HeapBlock *m_globalLock;                          // OBJECT HEAP - DO RELOCATION -
     CLR_RT_HeapBlock_String *m_strName;                      // OBJECT HEAP - DO RELOCATION -
-    CLR_RT_HeapBlock *m_outOfMemoryException;                // OBJECT HEAP - DO RELOCATION -
+    CLR_RT_HeapBlock m_outOfMemoryException;                 // NO RELOCATION -
     CLR_RT_AppDomainAssembly *m_appDomainAssemblyLastAccess; // EVENT HEAP  - NO RELOCATION -
     bool m_fCanBeUnloaded;
 
@@ -2689,6 +2688,12 @@ struct CLR_RT_GarbageCollector
 
     void ValidatePointers()
     {
+#if defined(NANOCLR_TRACE_MEMORY_STATS)
+        if (s_CLR_RT_fTrace_MemoryStats >= c_CLR_RT_Trace_Verbose)
+        {
+            CLR_Debug::Printf("\r\nGC: ValidatePointers\r\n");
+        }
+#endif
         Heap_Relocate_Pass(Relocation_JustCheck);
     }
 
@@ -3646,8 +3651,8 @@ struct CLR_RT_ExecutionEngine
     CLR_RT_Thread *m_cctorThread;             // EVENT HEAP - NO RELOCATION -
 
 #if !defined(NANOCLR_APPDOMAINS)
-    CLR_RT_HeapBlock *m_globalLock;           // OBJECT HEAP - DO RELOCATION -
-    CLR_RT_HeapBlock *m_outOfMemoryException; // OBJECT HEAP - DO RELOCATION -
+    CLR_RT_HeapBlock *m_globalLock;          // OBJECT HEAP - DO RELOCATION -
+    CLR_RT_HeapBlock m_outOfMemoryException; // NO RELOCATION -
 #endif
 
     CLR_RT_HeapBlock *m_currentUICulture; // OBJECT HEAP - DO RELOCATION -
@@ -3893,12 +3898,12 @@ extern CLR_UINT32 g_buildCRC;
 //
 
 #ifdef _WIN64
-CT_ASSERT(sizeof(CLR_RT_HeapBlock) == 20)
+CT_ASSERT(sizeof(struct CLR_RT_HeapBlock) == 20)
 #else
-CT_ASSERT(sizeof(CLR_RT_HeapBlock) == 12)
+CT_ASSERT(sizeof(struct CLR_RT_HeapBlock) == 12)
 #endif // _WIN64
 
-CT_ASSERT(sizeof(CLR_RT_HeapBlock_Raw) == sizeof(CLR_RT_HeapBlock))
+CT_ASSERT(sizeof(CLR_RT_HeapBlock_Raw) == sizeof(struct CLR_RT_HeapBlock))
 
 #if defined(NANOCLR_TRACE_MEMORY_STATS)
 #define NANOCLR_TRACE_MEMORY_STATS_EXTRA_SIZE sizeof(const char *)

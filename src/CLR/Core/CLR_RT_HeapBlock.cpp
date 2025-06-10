@@ -237,7 +237,7 @@ HRESULT CLR_RT_HeapBlock::SetReflection(const CLR_RT_TypeSpec_Index &sig)
     NATIVE_PROFILE_CLR_CORE();
     NANOCLR_HEADER();
 
-    CLR_RT_TypeDescriptor desc;
+    CLR_RT_TypeDescriptor desc{};
 
     NANOCLR_CHECK_HRESULT(desc.InitializeFromTypeSpec(sig));
 
@@ -278,7 +278,7 @@ HRESULT CLR_RT_HeapBlock::SetReflection(const CLR_RT_MethodDef_Index &md)
     NATIVE_PROFILE_CLR_CORE();
     NANOCLR_HEADER();
 
-    CLR_RT_MethodDef_Instance inst;
+    CLR_RT_MethodDef_Instance inst{};
 
     if (inst.InitializeFromIndex(md) == false)
     {
@@ -299,7 +299,7 @@ HRESULT CLR_RT_HeapBlock::SetObjectCls(const CLR_RT_TypeDef_Index &cls)
     NATIVE_PROFILE_CLR_CORE();
     NANOCLR_HEADER();
 
-    CLR_RT_TypeDef_Instance inst;
+    CLR_RT_TypeDef_Instance inst{};
 
     if (inst.InitializeFromIndex(cls) == false)
     {
@@ -388,6 +388,8 @@ HRESULT CLR_RT_HeapBlock::LoadFromReference(CLR_RT_HeapBlock &ref)
     CLR_RT_HeapBlock *obj;
     CLR_DataType dt = ref.DataType();
 
+    memset(&tmp, 0, sizeof(struct CLR_RT_HeapBlock));
+
     if (dt == DATATYPE_ARRAY_BYREF)
     {
         CLR_RT_HeapBlock_Array *array = ref.m_data.arrayReference.array;
@@ -453,7 +455,7 @@ HRESULT CLR_RT_HeapBlock::LoadFromReference(CLR_RT_HeapBlock &ref)
 
             if (objT && objT->IsBoxed())
             {
-                CLR_RT_TypeDef_Instance inst;
+                CLR_RT_TypeDef_Instance inst{};
                 if (objT->DataType() != DATATYPE_VALUETYPE)
                 {
                     NANOCLR_SET_AND_LEAVE(CLR_E_WRONG_TYPE);
@@ -530,6 +532,9 @@ HRESULT CLR_RT_HeapBlock::StoreToReference(CLR_RT_HeapBlock &ref, int size)
                 {
                     CLR_DataType dtElem = (CLR_DataType)array->m_typeOfElement;
                     CLR_RT_HeapBlock blk;
+
+                    memset(&blk, 0, sizeof(struct CLR_RT_HeapBlock));
+
                     blk.Assign(*this);
 
                     NANOCLR_CHECK_HRESULT(blk.Convert(
@@ -651,6 +656,8 @@ HRESULT CLR_RT_HeapBlock::Reassign(const CLR_RT_HeapBlock &value)
     CLR_RT_HeapBlock *obj;
     CLR_RT_HeapBlock ref;
 
+    memset(&ref, 0, sizeof(struct CLR_RT_HeapBlock));
+
     if (this->DataType() == DATATYPE_BYREF)
     {
         obj = this->Dereference();
@@ -696,6 +703,9 @@ HRESULT CLR_RT_HeapBlock::Reassign(const CLR_RT_HeapBlock &value)
         _ASSERTE(false); // not tested
 
         CLR_RT_HeapBlock valueT;
+
+        memset(&valueT, 0, sizeof(struct CLR_RT_HeapBlock));
+
         valueT.Assign(value);
 
         NANOCLR_CHECK_HRESULT(ref.LoadFromReference(valueT));
@@ -781,7 +791,7 @@ HRESULT CLR_RT_HeapBlock::PerformBoxingIfNeeded()
 
     if (fBox)
     {
-        CLR_RT_TypeDescriptor desc;
+        CLR_RT_TypeDescriptor desc{};
 
         NANOCLR_CHECK_HRESULT(desc.InitializeFromObject(*this));
 
@@ -799,6 +809,8 @@ HRESULT CLR_RT_HeapBlock::PerformBoxing(const CLR_RT_TypeDef_Instance &cls)
     CLR_RT_HeapBlock tmp;
     CLR_RT_HeapBlock *obj = this;
     CLR_DataType dt = obj->DataType();
+
+    memset(&tmp, 0, sizeof(struct CLR_RT_HeapBlock));
 
     //
     // System.DateTime and System.TimeSpan are real value types, so sometimes they are passed by reference.
@@ -966,7 +978,7 @@ CLR_RT_HeapBlock *CLR_RT_HeapBlock::FixBoxingReference()
 
         if (src->DataType() == DATATYPE_VALUETYPE && src->IsBoxed())
         {
-            CLR_RT_TypeDef_Instance inst;
+            CLR_RT_TypeDef_Instance inst{};
 
             if (!inst.InitializeFromIndex(src->ObjectCls()))
                 return NULL;
@@ -1055,13 +1067,13 @@ CLR_UINT32 CLR_RT_HeapBlock::GetHashCode(CLR_RT_HeapBlock *ptr, bool fRecurse, C
     switch (ptr->DataType())
     {
         case DATATYPE_OBJECT:
-            crc = GetHashCode(ptr->Dereference(), fRecurse, crc);
+            crc ^= GetHashCode(ptr->Dereference(), fRecurse, crc);
             break;
 
         case DATATYPE_STRING:
         {
             const char *src = ptr->StringText();
-            crc = SUPPORT_ComputeCRC(src, (int)hal_strlen_s(src), crc);
+            crc ^= SUPPORT_ComputeCRC(src, (int)hal_strlen_s(src), crc);
         }
         break;
 
@@ -1116,7 +1128,7 @@ CLR_UINT32 CLR_RT_HeapBlock::GetHashCode(CLR_RT_HeapBlock *ptr, bool fRecurse, C
         case DATATYPE_CLASS:
         case DATATYPE_VALUETYPE:
         {
-            CLR_RT_TypeDef_Instance cls;
+            CLR_RT_TypeDef_Instance cls{};
             cls.InitializeFromIndex(ptr->ObjectCls());
 
             // check if this is any of the following types
@@ -1135,12 +1147,12 @@ CLR_UINT32 CLR_RT_HeapBlock::GetHashCode(CLR_RT_HeapBlock *ptr, bool fRecurse, C
             if (fRecurse && cls.m_target->dataType <= DATATYPE_R8)
             {
                 // pass the 1st field which is the one holding the actual value
-                crc = GetHashCode(&ptr[CLR_RT_HeapBlock::HB_Object_Fields_Offset], false, crc);
+                crc ^= GetHashCode(&ptr[CLR_RT_HeapBlock::HB_Object_Fields_Offset], false, crc);
             }
             else
             {
                 // always starts with the pointer to the object to fully disambiguate
-                crc = SUPPORT_ComputeCRC(&ptr, sizeof(ptr), crc);
+                crc ^= SUPPORT_ComputeCRC(&ptr, sizeof(ptr), crc);
 
                 if (fRecurse)
                 {
@@ -1150,8 +1162,9 @@ CLR_UINT32 CLR_RT_HeapBlock::GetHashCode(CLR_RT_HeapBlock *ptr, bool fRecurse, C
                     {
                         do
                         {
-                            crc = GetHashCode(&ptr[totFields + CLR_RT_HeapBlock::HB_Object_Fields_Offset], false, crc);
-                        } while (--totFields > 0);
+                            crc ^=
+                                GetHashCode(&ptr[--totFields + CLR_RT_HeapBlock::HB_Object_Fields_Offset], true, crc);
+                        } while (totFields > 0);
                     }
                 }
             }
@@ -1163,9 +1176,9 @@ CLR_UINT32 CLR_RT_HeapBlock::GetHashCode(CLR_RT_HeapBlock *ptr, bool fRecurse, C
             CLR_RT_HeapBlock_Delegate *dlg = (CLR_RT_HeapBlock_Delegate *)ptr;
             const CLR_RT_MethodDef_Index &ftn = dlg->DelegateFtn();
 
-            crc = GetHashCode(&dlg->m_object, false, crc);
+            crc ^= GetHashCode(&dlg->m_object, false, crc);
 
-            crc = SUPPORT_ComputeCRC(&ftn, sizeof(ftn), crc);
+            crc ^= SUPPORT_ComputeCRC(&ftn, sizeof(ftn), crc);
         }
         break;
 
@@ -1173,13 +1186,13 @@ CLR_UINT32 CLR_RT_HeapBlock::GetHashCode(CLR_RT_HeapBlock *ptr, bool fRecurse, C
         {
             CLR_RT_ObjectToEvent_Source *evtSrc = (CLR_RT_ObjectToEvent_Source *)ptr;
 
-            crc = GetHashCode(evtSrc->m_eventPtr, false, crc);
-            crc = GetHashCode(evtSrc->m_objectPtr, false, crc);
+            crc ^= GetHashCode(evtSrc->m_eventPtr, false, crc);
+            crc ^= GetHashCode(evtSrc->m_objectPtr, false, crc);
         }
         break;
 
         default:
-            crc = SUPPORT_ComputeCRC((const void *)&ptr->DataByRefConst(), ptr->GetAtomicDataUsedBytes(), crc);
+            crc ^= SUPPORT_ComputeCRC((const void *)&ptr->DataByRefConst(), ptr->GetAtomicDataUsedBytes(), crc);
 
             break;
     }
@@ -1315,6 +1328,19 @@ bool CLR_RT_HeapBlock::ObjectsEqual(
             break;
 
         case DATATYPE_STRING:
+        case DATATYPE_CLASS:
+        case DATATYPE_BOOLEAN:
+        case DATATYPE_CHAR:
+        case DATATYPE_I1:
+        case DATATYPE_U1:
+        case DATATYPE_I2:
+        case DATATYPE_U2:
+        case DATATYPE_I4:
+        case DATATYPE_U4:
+        case DATATYPE_I8:
+        case DATATYPE_U8:
+        case DATATYPE_DATETIME:
+        case DATATYPE_TIMESPAN:
             return Compare_Values(pArgLeft, pArgRight, false) == 0;
             break;
 
@@ -1330,7 +1356,7 @@ bool CLR_RT_HeapBlock::ObjectsEqual(
 
                 if (rightObj->DataType() == DATATYPE_VALUETYPE)
                 {
-                    CLR_RT_TypeDef_Instance inst;
+                    CLR_RT_TypeDef_Instance inst{};
                     CLR_RT_HeapBlock *obj = NULL;
 
                     if (!inst.InitializeFromIndex(rightObj->ObjectCls()))
@@ -1399,7 +1425,7 @@ static const CLR_RT_HeapBlock *FixReflectionForType(const CLR_RT_HeapBlock &src,
 
     if (rd.m_kind == REFLECTION_TYPE)
     {
-        CLR_RT_TypeDef_Instance inst;
+        CLR_RT_TypeDef_Instance inst{};
         CLR_UINT32 levels;
 
         if (inst.InitializeFromReflection(rd, &levels) && levels == 0)
@@ -1617,6 +1643,9 @@ CLR_INT32 CLR_RT_HeapBlock::Compare_Values(const CLR_RT_HeapBlock &left, const C
                 CLR_RT_HeapBlock hbLeft;
                 CLR_RT_HeapBlock hbRight;
 
+                memset(&hbLeft, 0, sizeof(struct CLR_RT_HeapBlock));
+                memset(&hbRight, 0, sizeof(struct CLR_RT_HeapBlock));
+
                 if (left.ReflectionDataConst().m_kind != right.ReflectionDataConst().m_kind)
                 {
                     ptrLeft = FixReflectionForType(left, hbLeft);
@@ -1639,7 +1668,7 @@ CLR_INT32 CLR_RT_HeapBlock::Compare_Values(const CLR_RT_HeapBlock &left, const C
                 // deal with special cases:
                 // return 0 if the numbers are unordered (either or both are NaN)
                 // this is post processed in interpreter so '1' will turn into '0'
-                if (__isnand(left.NumericByRefConst().r4) || __isnand(right.NumericByRefConst().r4))
+                if (__isnand(left.NumericByRefConst().r4) && __isnand(right.NumericByRefConst().r4))
                 {
                     return 1;
                 }
@@ -2399,10 +2428,8 @@ void CLR_RT_HeapBlock::Relocate__HeapBlock()
 void CLR_RT_HeapBlock::Relocate_String()
 {
     NATIVE_PROFILE_CLR_CORE();
-    CLR_RT_GarbageCollector::Heap_Relocate((void **)&m_data.string.m_text);
-#if !defined(NANOCLR_NO_ASSEMBLY_STRINGS)
-    CLR_RT_GarbageCollector::Heap_Relocate((void **)&m_data.string.m_assm);
-#endif
+
+    CLR_RT_GarbageCollector::Heap_Relocate((void **)&m_data);
 }
 
 void CLR_RT_HeapBlock::Relocate_Obj()

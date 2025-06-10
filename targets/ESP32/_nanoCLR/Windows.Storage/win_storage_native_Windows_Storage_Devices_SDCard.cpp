@@ -15,7 +15,7 @@ HRESULT Library_win_storage_native_Windows_Storage_Devices_SDCard::MountMMCNativ
     NANOCLR_HEADER();
 
 #if (HAL_USE_SDC == TRUE)
-    bool bit1Mode = stack.Arg0().NumericByRef().s4;
+    bool bit1Mode = (bool)stack.Arg0().NumericByRef().u1;
     if (!Storage_MountMMC(bit1Mode, 0))
     {
         NANOCLR_SET_AND_LEAVE(CLR_E_VOLUME_NOT_FOUND);
@@ -70,7 +70,7 @@ HRESULT Library_win_storage_native_Windows_Storage_Devices_SDCard::UnmountNative
 #if (HAL_USE_SDC == TRUE)
 
     // Unmount SPI device
-    if (!Storage_UnMountSDCard())
+    if (!Storage_UnMountSDCard(0))
     {
         // SDcard not mounted
         NANOCLR_SET_AND_LEAVE(CLR_E_INVALID_OPERATION);
