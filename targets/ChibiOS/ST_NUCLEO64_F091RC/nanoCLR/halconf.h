@@ -21,7 +21,7 @@
 #define HALCONF_H
 
 #define _CHIBIOS_HAL_CONF_
-#define _CHIBIOS_HAL_CONF_VER_8_4_
+#define _CHIBIOS_HAL_CONF_VER_9_0_
 
 #include <target_platform.h>
 #include "mcuconf.h"
@@ -405,7 +405,7 @@
  *          default configuration.
  */
 #if !defined(SERIAL_DEFAULT_BITRATE) || defined(__DOXYGEN__)
-#define SERIAL_DEFAULT_BITRATE              460800
+#define SERIAL_DEFAULT_BITRATE              115200
 #endif
 
 /**

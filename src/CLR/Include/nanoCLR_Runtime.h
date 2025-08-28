@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) .NET Foundation and Contributors
 // Portions Copyright (c) Microsoft Corporation.  All rights reserved.
 // See LICENSE file in the project root for full license information.
@@ -949,7 +949,6 @@ class UnicodeString
 {
   private:
     CLR_RT_UnicodeHelper m_unicodeHelper;
-    CLR_RT_HeapBlock m_uHeapBlock;
     CLR_UINT16 *m_wCharArray;
     int m_length; /// Length in wide characters (not bytes).
 
@@ -2600,7 +2599,11 @@ struct CLR_RT_GarbageCollector
         CLR_UINT8 *m_start;
         CLR_UINT8 *m_end;
         CLR_UINT8 *m_destination;
-        CLR_INT32 m_offset;
+#ifdef _WIN64
+        CLR_UINT64 m_offset;
+#else
+        CLR_UINT32 m_offset;
+#endif
     };
 
     //--//
@@ -2912,6 +2915,9 @@ struct ThreadPriority
     /*=========================================================================
     ** Constants for thread priorities.
     =========================================================================*/
+    ///////////////////////////////////////////////////////////////////////////
+    // !!! KEEP IN SYNC with System.Threading.ThreadPriority in mscorlib !!! //
+    ///////////////////////////////////////////////////////////////////////////
     static const int Lowest = 0;
     static const int BelowNormal = 1;
     static const int Normal = 2;
@@ -3428,6 +3434,8 @@ typedef enum Events
     Event_Bluetooth         = 0x00001000,
     Event_UsbIn             = 0x00002000,
     Event_UsbOut            = 0x00004000,
+    Event_IO                = 0x00008000,
+    Event_I2cSlave          = 0x00010000,
     Event_AppDomain         = 0x02000000,
     Event_Socket            = 0x20000000,
     Event_IdleCPU           = 0x40000000,
@@ -3687,7 +3695,7 @@ struct CLR_RT_ExecutionEngine
 
     HRESULT StartHardware();
 
-    static void Reboot(bool fHard);
+    static void Reboot(uint16_t rebootOptions);
 
     void JoinAllThreadsAndExecuteFinalizer();
 
@@ -3899,12 +3907,12 @@ extern CLR_UINT32 g_buildCRC;
 //
 
 #ifdef _WIN64
-CT_ASSERT(sizeof(CLR_RT_HeapBlock) == 20)
+CT_ASSERT(sizeof(struct CLR_RT_HeapBlock) == 20)
 #else
-CT_ASSERT(sizeof(CLR_RT_HeapBlock) == 12)
+CT_ASSERT(sizeof(struct CLR_RT_HeapBlock) == 12)
 #endif // _WIN64
 
-CT_ASSERT(sizeof(CLR_RT_HeapBlock_Raw) == sizeof(CLR_RT_HeapBlock))
+CT_ASSERT(sizeof(CLR_RT_HeapBlock_Raw) == sizeof(struct CLR_RT_HeapBlock))
 
 #if defined(NANOCLR_TRACE_MEMORY_STATS)
 #define NANOCLR_TRACE_MEMORY_STATS_EXTRA_SIZE sizeof(const char *)

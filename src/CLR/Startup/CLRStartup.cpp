@@ -5,11 +5,7 @@
 //
 
 #include "CLRStartup.h"
-#include <nanoHAL.h>
-#include <nanoCLR_Application.h>
 #include <nanoCLR_Hardware.h>
-#include <nanoCLR_Runtime.h>
-#include <nanoCLR_Types.h>
 
 void ClrExit()
 {
@@ -369,7 +365,7 @@ void ClrStartup(CLR_SETTINGS params)
 {
     NATIVE_PROFILE_CLR_STARTUP();
     Settings settings;
-    ASSERT(sizeof(CLR_RT_HeapBlock_Raw) == sizeof(CLR_RT_HeapBlock));
+    ASSERT(sizeof(CLR_RT_HeapBlock_Raw) == sizeof(struct CLR_RT_HeapBlock));
     bool softReboot;
 
     do

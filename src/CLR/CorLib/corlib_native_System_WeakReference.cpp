@@ -122,9 +122,9 @@ HRESULT CLR_RT_HeapBlock_WeakReference::GetTarget(CLR_RT_HeapBlock &targetRefere
             else
             {
                 CLR_RT_HeapBlock input;
-                input.SetObjectReference(m_targetSerialized);
-
                 CLR_RT_HeapBlock output;
+
+                input.SetObjectReference(m_targetSerialized);
                 output.SetObjectReference(NULL);
 
                 {
