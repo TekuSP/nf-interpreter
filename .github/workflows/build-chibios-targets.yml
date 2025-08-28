@@ -42,11 +42,11 @@ jobs:
 
       matrix: # Add the target and build type you wish to generate firmware for:
         include: [
-          { target: ST_STM32F769I_DISCOVERY, build-type: MinSizeRel },
-          { target: ST_STM32F769I_DISCOVERY, build-type: Debug },
+          #{ target: ST_STM32F769I_DISCOVERY, build-type: MinSizeRel },
+          #{ target: ST_STM32F769I_DISCOVERY, build-type: Debug },
 
-          { target: ORGPAL_PALTHREE, build-type: MinSizeRel },
-          { target: ORGPAL_PALTHREE, build-type: Debug },
+          #{ target: ORGPAL_PALTHREE, build-type: MinSizeRel },
+          #{ target: ORGPAL_PALTHREE, build-type: Debug },
 
           # { target: ST_STM32F429I_DISCOVERY, build-type: MinSizeRel },
           # { target: ST_STM32F429I_DISCOVERY, build-type: Debug },
