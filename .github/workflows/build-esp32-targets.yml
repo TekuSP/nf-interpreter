@@ -75,8 +75,8 @@ jobs:
           # { target: M5Core, build-type: MinSizeRel },
           # { target: M5Core, build-type: Debug },
 
-          { target: ESP32_S3_BLE, build-type: MinSizeRel, container: ESP32 },
-          { target: ESP32_S3_BLE, build-type: Debug, container: ESP32 },
+          { target: ESP32_S3_MELLOW_HALO, build-type: MinSizeRel, container: ESP32 },
+          { target: ESP32_S3_MELLOW_HALO, build-type: Debug, container: ESP32 },
 
           # { target: AtomS3, build-type: MinSizeRel },
           # { target: AtomS3, build-type: Debug },

@@ -348,7 +348,7 @@
             }
         },
         {
-            "name": "ESP32_S3_BLE",
+            "name": "ESP32_S3_MELLOW_HALO",
             "inherits": [
                 "xtensa-esp32s3-preset",
                 "user-tools-repos",
@@ -357,7 +357,7 @@
             "hidden": false,
             "cacheVariables": {
                 "TARGET_NAME": "${presetName}",
-                "SDK_CONFIG_FILE": "sdkconfig.default_ble.esp32s3",
+                "SDK_CONFIG_FILE": "sdkconfig.default_octal_ble.esp32s3",
                 "NF_BUILD_RTM": "OFF",
                 "NF_FEATURE_DEBUGGER": "ON",
                 "NF_FEATURE_RTC": "ON",
