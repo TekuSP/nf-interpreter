@@ -21,7 +21,7 @@
 #define HALCONF_H
 
 #define _CHIBIOS_HAL_CONF_
-#define _CHIBIOS_HAL_CONF_VER_8_4_
+#define _CHIBIOS_HAL_CONF_VER_9_0_
 
 #include <target_platform.h>
 #include "mcuconf.h"
@@ -547,7 +547,6 @@
 #if !defined(WSPI_USE_MUTUAL_EXCLUSION) || defined(__DOXYGEN__)
 #define WSPI_USE_MUTUAL_EXCLUSION           TRUE
 #endif
-
 
 // header for nanoFramework overlay
 #include "halconf_nf.h"
