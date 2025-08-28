@@ -42,10 +42,10 @@ jobs:
 
       matrix: # Add the target and build type you wish to generate firmware for:
         include: [
-          { target: TI_CC1352R1_LAUNCHXL, build-type: MinSizeRel, radio-freq: 915 },
-          { target: TI_CC1352R1_LAUNCHXL, build-type: Debug, radio-freq: 915 },
-          { target: TI_CC1352R1_LAUNCHXL, build-type: MinSizeRel, radio-freq: 868 },
-          { target: TI_CC1352R1_LAUNCHXL, build-type: Debug, radio-freq: 868 },
+          #{ target: TI_CC1352R1_LAUNCHXL, build-type: MinSizeRel, radio-freq: 915 },
+          #{ target: TI_CC1352R1_LAUNCHXL, build-type: Debug, radio-freq: 915 },
+          #{ target: TI_CC1352R1_LAUNCHXL, build-type: MinSizeRel, radio-freq: 868 },
+          #{ target: TI_CC1352R1_LAUNCHXL, build-type: Debug, radio-freq: 868 },
 
           # BROKEN!
           # { target: TI_CC3220SF_LAUNCHXL, build-type: MinSizeRel, radio-freq: 915 },
@@ -56,10 +56,10 @@ jobs:
 
           # Community targets:
                 
-          { target: TI_CC1352P1_LAUNCHXL, build-type: MinSizeRel, radio-freq: 915 },
-          { target: TI_CC1352P1_LAUNCHXL, build-type: Debug, radio-freq: 915 },
-          { target: TI_CC1352P1_LAUNCHXL, build-type: MinSizeRel, radio-freq: 868 },
-          { target: TI_CC1352P1_LAUNCHXL, build-type: Debug, radio-freq: 868 },
+          #{ target: TI_CC1352P1_LAUNCHXL, build-type: MinSizeRel, radio-freq: 915 },
+          #{ target: TI_CC1352P1_LAUNCHXL, build-type: Debug, radio-freq: 915 },
+          #{ target: TI_CC1352P1_LAUNCHXL, build-type: MinSizeRel, radio-freq: 868 },
+          #{ target: TI_CC1352P1_LAUNCHXL, build-type: Debug, radio-freq: 868 },
 
         ]
 
