@@ -28,7 +28,7 @@ endif()
 # check if build was requested with a specifc FatFS version
 if(FATFS_VERSION_EMPTY)
     # no FatFS version actualy specified, must be empty which is fine, we'll default to a known good version
-    set(FATFS_VERSION_TAG "R0.15")
+    set(FATFS_VERSION_TAG "R0.15a")
 else()
     # set version 
     set(FATFS_VERSION_TAG "${FATFS_VERSION}")
@@ -58,7 +58,7 @@ endif()
 FetchContent_GetProperties(fatfs)
 if(NOT fatfs_POPULATED)
     # Fetch the content using previously declared details
-    FetchContent_Populate(fatfs)
+    FetchContent_MakeAvailable(fatfs)
 endif()
 
 # have to delete the ffconf.h template from the repo

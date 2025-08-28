@@ -54,6 +54,8 @@ esp_err_t SetDutyCycle(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t 
 
 using namespace sys_dev_pwm_native_System_Device_Pwm_PwmChannelHelpers;
 
+bool isStarted;
+
 //
 //  Look up Pin number to find channel, if create true and not present then add pin
 //  return channel number or -1 if error
@@ -158,7 +160,7 @@ HRESULT sys_dev_pwm_native_System_Device_Pwm_PwmChannelHelpers::ConfigureAndStar
 
     duty_res = (ledc_timer_bit_t)optimumDutyResolution;
 
-    timer_conf = {mode, duty_res, timer_sel, (uint32_t)desiredFrequency, LEDC_AUTO_CLK};
+    timer_conf = {mode, duty_res, timer_sel, (uint32_t)desiredFrequency, LEDC_AUTO_CLK, false};
 
     result = ledc_timer_config(&timer_conf);
 
@@ -181,6 +183,8 @@ HRESULT sys_dev_pwm_native_System_Device_Pwm_PwmChannelHelpers::ConfigureAndStar
         ledc_stop(mode, channel, polarity);
     }
 
+    isStarted = true;
+
     NANOCLR_NOCLEANUP();
 }
 
@@ -192,11 +196,11 @@ int32_t sys_dev_pwm_native_System_Device_Pwm_PwmChannelHelpers::GetOptimumResolu
 
     optimumDutyResolution = 1;
 
-    for (int dutyResolution = SOC_LEDC_TIMER_BIT_WIDE_NUM - 1; dutyResolution > 0; dutyResolution--)
+    for (int dutyResolution = SOC_LEDC_TIMER_BIT_WIDTH - 1; dutyResolution > 0; dutyResolution--)
     {
         precision = (0x1 << dutyResolution); // 2**depth
 
-        divParam = ((uint64_t)LEDC_APB_CLK_HZ << 8) / desiredFrequency / precision;
+        divParam = ((uint64_t)APB_CLK_FREQ << 8) / desiredFrequency / precision;
 
         if (divParam > 256)
         {
@@ -286,18 +290,18 @@ HRESULT Library_sys_dev_pwm_native_System_Device_Pwm_PwmChannel::NativeSetDesire
     channel = (ledc_channel_t)GetChannel(pinNumber, timerId, false);
     dutyCycle = pThis[FIELD___dutyCycle].NumericByRef().u4;
 
+    // parameter check
+    if (desiredFrequency <= 0)
+    {
+        NANOCLR_SET_AND_LEAVE(CLR_E_INVALID_PARAMETER);
+    }
+
     // Set the backing frequency field when it is zero and return
     // We need this as this native function is called before Init
-    if (channel == -1)
+    if (!isStarted || channel == -1)
     {
         pThis[FIELD___frequency].NumericByRef().s4 = desiredFrequency;
         NANOCLR_SET_AND_LEAVE(S_OK);
-    }
-
-    // parameter check
-    if (desiredFrequency < 0)
-    {
-        NANOCLR_SET_AND_LEAVE(CLR_E_INVALID_PARAMETER);
     }
 
     timer = (ledc_timer_t)(timerId & 0x03);
@@ -312,7 +316,7 @@ HRESULT Library_sys_dev_pwm_native_System_Device_Pwm_PwmChannel::NativeSetDesire
 
     duty_res = (ledc_timer_bit_t)optimumDutyResolution;
 
-    timer_conf = {mode, duty_res, timer, (uint32_t)desiredFrequency, LEDC_AUTO_CLK};
+    timer_conf = {mode, duty_res, timer, (uint32_t)desiredFrequency, LEDC_AUTO_CLK, false};
 
     result = ledc_timer_config(&timer_conf);
 
@@ -351,7 +355,6 @@ HRESULT Library_sys_dev_pwm_native_System_Device_Pwm_PwmChannel::NativeSetActive
     ledc_mode_t speed_mode;
     int32_t desiredFrequency;
     int32_t optimumDutyResolution;
-    int32_t privateDutyCycle;
     uint32_t calDutyCycle;
 
     NANOCLR_HEADER();
@@ -363,7 +366,6 @@ HRESULT Library_sys_dev_pwm_native_System_Device_Pwm_PwmChannel::NativeSetActive
     // Retrieves the needed parameters from private class properties or method parameters
     timerId = pThis[FIELD___pwmTimer].NumericByRef().s4;
     pinNumber = pThis[FIELD___pinNumber].NumericByRef().s4;
-    privateDutyCycle = pThis[FIELD___dutyCycle].NumericByRef().u4;
     desiredFrequency = pThis[FIELD___frequency].NumericByRef().s4;
 
     // parameter check
@@ -378,7 +380,7 @@ HRESULT Library_sys_dev_pwm_native_System_Device_Pwm_PwmChannel::NativeSetActive
 
     // Set the backing duty cycle field when it is zero and return
     // We need this as this native function is called before Init
-    if (privateDutyCycle == 0)
+    if (!isStarted)
     {
         pThis[FIELD___dutyCycle].NumericByRef().u4 = dutyCycle;
         NANOCLR_SET_AND_LEAVE(S_OK);
@@ -442,6 +444,8 @@ HRESULT Library_sys_dev_pwm_native_System_Device_Pwm_PwmChannel::NativeStop___VO
     channel = (ledc_channel_t)GetChannel(pinNumber, timerId, false);
 
     ledc_stop(speed_mode, channel, (uint32_t)polarity);
+
+    isStarted = false;
 
     NANOCLR_NOCLEANUP();
 }

@@ -6,7 +6,8 @@
 #include <nanoHAL.h>
 #include <nanoHAL_v2.h>
 #include <nanoWeak.h>
-//#include <network_options.h>
+// #include <network_options.h>
+#include <em_device.h>
 
 #if defined(WIFI_DRIVER_ISM43362) && defined(I_AM_NANOCLR)
 #include <wifi.h>
@@ -517,7 +518,7 @@ __nfweak bool ConfigurationManager_StoreConfigurationBlock(
 // The flash sector has to be erased before writing the updated block
 // it's implemented with 'weak' attribute so it can be replaced at target level if a different persistance mechanism is
 // used
-__nfweak bool ConfigurationManager_UpdateConfigurationBlock(
+__nfweak UpdateConfigurationResult ConfigurationManager_UpdateConfigurationBlock(
     void *configurationBlock,
     DeviceConfigurationOption configuration,
     uint32_t configurationIndex)
@@ -527,7 +528,7 @@ __nfweak bool ConfigurationManager_UpdateConfigurationBlock(
     // uint32_t blockOffset;
     // uint8_t *blockAddressInCopy;
     uint32_t blockSize;
-    bool success = FALSE;
+    UpdateConfigurationResult success = UpdateConfigurationResult_Failed;
 
     // config sector size
     int sizeOfConfigSector = (uint32_t)&__nanoConfig_end__ - (uint32_t)&__nanoConfig_start__;
@@ -560,8 +561,8 @@ __nfweak bool ConfigurationManager_UpdateConfigurationBlock(
                 // free memory
                 platform_free(configSectorCopy);
 
-                // operation is successfull (nothing to update)
-                return TRUE;
+                // operation is successful (nothing to update)
+                return UpdateConfigurationResult_NoChanges;
             }
 
             // get storage address from block address
@@ -591,8 +592,8 @@ __nfweak bool ConfigurationManager_UpdateConfigurationBlock(
                 // free memory
                 platform_free(configSectorCopy);
 
-                // operation is successfull (nothing to update)
-                return TRUE;
+                // operation is successful (nothing to update)
+                return UpdateConfigurationResult_NoChanges;
             }
 
             // storage address from block address
@@ -620,8 +621,8 @@ __nfweak bool ConfigurationManager_UpdateConfigurationBlock(
                 // free memory
                 platform_free(configSectorCopy);
 
-                // operation is successfull (nothing to update)
-                return TRUE;
+                // operation is successful (nothing to update)
+                return UpdateConfigurationResult_NoChanges;
             }
 
             // storage address from block address
@@ -651,8 +652,8 @@ __nfweak bool ConfigurationManager_UpdateConfigurationBlock(
                 // free memory
                 platform_free(configSectorCopy);
 
-                // operation is successfull (nothing to update)
-                return TRUE;
+                // operation is successful (nothing to update)
+                return UpdateConfigurationResult_NoChanges;
             }
 
             // storage address from block address
@@ -669,7 +670,7 @@ __nfweak bool ConfigurationManager_UpdateConfigurationBlock(
             // free memory first
             platform_free(configSectorCopy);
 
-            return FALSE;
+            return UpdateConfigurationResult_Failed;
         }
 
         // // erase config sector
@@ -715,7 +716,8 @@ __nfweak void InitialiseWirelessDefaultConfig(HAL_Configuration_Wireless80211 *c
     config->Id = configurationIndex;
 
     config->Options =
-        (Wireless80211Configuration_ConfigurationOptions)(Wireless80211Configuration_ConfigurationOptions_AutoConnect | Wireless80211Configuration_ConfigurationOptions_Enable);
+        (Wireless80211Configuration_ConfigurationOptions)(Wireless80211Configuration_ConfigurationOptions_AutoConnect |
+                                                          Wireless80211Configuration_ConfigurationOptions_Enable);
 }
 
 //  Default initialisation for Network interface config blocks
@@ -771,4 +773,36 @@ int32_t ConfigurationManager_FindNetworkConfigurationMatchingWirelessConfigurati
 
     // not found
     return -1;
+}
+
+// default implementation
+// this is weak so a manufacturer can provide a strong implementation
+__nfweak void ConfigurationManager_GetSystemSerialNumber(char *serialNumber, size_t serialNumberSize)
+{
+    memset(serialNumber, 0, serialNumberSize);
+
+    // Use the device Unique ID which is 64 bits long
+    // Put it in the LSB of the serial number
+    int startOfId = serialNumberSize - 8;
+
+    // high 32 bits
+    uint32_t rawId = DEVINFO->UNIQUEH;
+    for (int i = 3; i >= 0; --i)
+    {
+        serialNumber[startOfId + i] = rawId & 0xFF;
+        rawId >>= 8;
+    }
+
+    // low 32 bits
+    rawId = DEVINFO->UNIQUEL;
+    for (int i = 7; i >= 4; --i)
+    {
+        serialNumber[startOfId + i] = rawId & 0xFF;
+        rawId >>= 8;
+    }
+
+    // Disambiguation is needed because the hardware-specific identifier used to create the
+    // default serial number on other platforms may be in the same range.
+    // Set the first byte to a number that is unique (within the nanoFramework CLR) for the Giant Gecko.
+    serialNumber[0] = 3;
 }

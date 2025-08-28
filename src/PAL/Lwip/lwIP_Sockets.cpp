@@ -17,7 +17,12 @@ extern "C"
 #include "lwip/sockets.h"
 #include "lwip/dhcp.h"
 #include "lwip/netif.h"
+#include <lwip/apps/sntp.h>
 }
+
+#if defined(PLATFORM_ESP32)
+#include "NF_ESP32_Network.h"
+#endif
 
 int errorCode;
 
@@ -159,13 +164,18 @@ void LWIP_SOCKETS_Driver::Link_callback(struct netif *netif)
     if (netif_is_link_up(netif))
     {
         if (!PostAvailabilityOnContinuation.IsLinked())
+        {
             PostAvailabilityOnContinuation.Enqueue();
+        }
     }
     else
     {
         if (!PostAvailabilityOffContinuation.IsLinked())
+        {
             PostAvailabilityOffContinuation.Enqueue();
+        }
     }
+
     Events_Set(SYSTEM_EVENT_FLAG_SOCKET);
     Events_Set(SYSTEM_EVENT_FLAG_NETWORK);
 }
@@ -179,22 +189,30 @@ void LWIP_SOCKETS_Driver::Status_callback(struct netif *netif)
 #endif
 
     if (!PostAddressChangedContinuation.IsLinked())
+    {
         PostAddressChangedContinuation.Enqueue();
+    }
+
+    // need to restart SNTP client
+#if SNTP_SERVER_DNS
+    sntp_stop();
+    sntp_init();
+#endif
 
 #if !defined(BUILD_RTM)
-        // lcd_printf("\f\n\n\n\n\n\nLink Update: %s\n", (netif_is_up(netif) ? "UP  " : "DOWN"));
-        // lcd_printf("         IP: %d.%d.%d.%d\n", (netif->ip_addr.addr >> 0) & 0xFF,
-        // 	(netif->ip_addr.addr >> 8) & 0xFF,
-        // 	(netif->ip_addr.addr >> 16) & 0xFF,
-        // 	(netif->ip_addr.addr >> 24) & 0xFF);
-        // lcd_printf("         SM: %d.%d.%d.%d\n", (netif->netmask.addr >> 0) & 0xFF,
-        // 	(netif->netmask.addr >> 8) & 0xFF,
-        // 	(netif->netmask.addr >> 16) & 0xFF,
-        // 	(netif->netmask.addr >> 24) & 0xFF);
-        // lcd_printf("         GW: %d.%d.%d.%d\n", (netif->gw.addr >> 0) & 0xFF,
-        // 	(netif->gw.addr >> 8) & 0xFF,
-        // 	(netif->gw.addr >> 16) & 0xFF,
-        // 	(netif->gw.addr >> 24) & 0xFF);
+    // lcd_printf("\f\n\n\n\n\n\nLink Update: %s\n", (netif_is_up(netif) ? "UP  " : "DOWN"));
+    // lcd_printf("         IP: %d.%d.%d.%d\n", (netif->ip_addr.addr >> 0) & 0xFF,
+    // 	(netif->ip_addr.addr >> 8) & 0xFF,
+    // 	(netif->ip_addr.addr >> 16) & 0xFF,
+    // 	(netif->ip_addr.addr >> 24) & 0xFF);
+    // lcd_printf("         SM: %d.%d.%d.%d\n", (netif->netmask.addr >> 0) & 0xFF,
+    // 	(netif->netmask.addr >> 8) & 0xFF,
+    // 	(netif->netmask.addr >> 16) & 0xFF,
+    // 	(netif->netmask.addr >> 24) & 0xFF);
+    // lcd_printf("         GW: %d.%d.%d.%d\n", (netif->gw.addr >> 0) & 0xFF,
+    // 	(netif->gw.addr >> 8) & 0xFF,
+    // 	(netif->gw.addr >> 16) & 0xFF,
+    // 	(netif->gw.addr >> 24) & 0xFF);
 
 // FIXME debug_printf("IP Address: %d.%d.%d.%d\n", (netif->ip_addr.u_addr.ip4.addr >> 0) & 0xFF,
 // 	(netif->ip_addr.u_addr.ip4.addr >> 8) & 0xFF,
@@ -218,16 +236,65 @@ void LWIP_SOCKETS_Driver::Status_callback(struct netif *netif)
     }
 #endif
 #endif
+
     Events_Set(SYSTEM_EVENT_FLAG_SOCKET);
     Events_Set(SYSTEM_EVENT_FLAG_NETWORK);
 }
 #endif
 
+//  When network interface is not initialised/started at boot we can set net interface number when started
+//
+void LWIP_SOCKETS_Driver::SetSocketDriverInterface(int i, int interfaceNumber)
+{
+    g_LWIP_SOCKETS_Driver.m_interfaces[i].m_interfaceNumber = interfaceNumber;
+}
+
+//  Initialise a network interface with interface number
+//  returns
+//     True if interface initialised
+//     False if failed or not ready
+//
+bool LWIP_SOCKETS_Driver::InitializeInterfaceIndex(
+    int i,
+    int interfaceNumber,
+    HAL_Configuration_NetworkInterface &networkConfiguration)
+{
+    struct netif *networkInterface;
+
+    SetSocketDriverInterface(i, interfaceNumber);
+
+    UpdateAdapterConfiguration(i, (NetworkInterface_UpdateOperation_Dns), &networkConfiguration);
+
+    networkInterface = netif_find_interface(interfaceNumber);
+    if (networkInterface)
+    {
+#if LWIP_NETIF_LINK_CALLBACK == 1
+        netif_set_link_callback(networkInterface, Link_callback);
+
+        if (netif_is_link_up(networkInterface))
+        {
+            Link_callback(networkInterface);
+        }
+#endif
+#if LWIP_NETIF_STATUS_CALLBACK == 1
+        netif_set_status_callback(networkInterface, Status_callback);
+
+        if (netif_is_up(networkInterface))
+        {
+            Status_callback(networkInterface);
+        }
+#endif
+
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
 bool LWIP_SOCKETS_Driver::Initialize()
 {
     NATIVE_PROFILE_PAL_NETWORK();
 
-    struct netif *networkInterface;
     HAL_Configuration_NetworkInterface networkConfiguration;
     int interfaceNumber;
 
@@ -244,7 +311,8 @@ bool LWIP_SOCKETS_Driver::Initialize()
     g_LWIP_SOCKETS_Driver.m_interfaces =
         (LWIP_DRIVER_INTERFACE_DATA *)platform_malloc(interfaceCount * sizeof(LWIP_DRIVER_INTERFACE_DATA));
 
-    /* Initialize the target board lwIP stack */
+    // Initialize the target board lwIP stack
+    // Developer note: this call can only return AFTER the stack has been initialized
     nanoHAL_Network_Initialize();
 
     for (int i = 0; i < g_TargetConfiguration.NetworkInterfaceConfigs->Count; i++)
@@ -256,64 +324,26 @@ bool LWIP_SOCKETS_Driver::Initialize()
                 i))
         {
             // failed to load configuration
-            // FIXME output error?
+            // FIXME output error, error message log ?
             // move to the next, if any
             continue;
         }
         _ASSERTE(networkConfiguration.StartupAddressMode > 0);
 
-        /* Bind and Open the Ethernet driver */
+        // Bind and Open the network driver
         Network_Interface_Bind(i);
         interfaceNumber = Network_Interface_Open(i);
-
         if (interfaceNumber == SOCK_SOCKET_ERROR)
         {
+            g_LWIP_SOCKETS_Driver.m_interfaces[i].m_interfaceNumber = -1;
             DEBUG_HANDLE_SOCKET_ERROR("Network init", FALSE);
             continue;
         }
 
-        g_LWIP_SOCKETS_Driver.m_interfaces[i].m_interfaceNumber = interfaceNumber;
-
-        UpdateAdapterConfiguration(i, (NetworkInterface_UpdateOperation_Dns), &networkConfiguration);
-
-        networkInterface = netif_find_interface(interfaceNumber);
-
-        if (networkInterface)
-        {
-#if LWIP_NETIF_LINK_CALLBACK == 1
-            netif_set_link_callback(networkInterface, Link_callback);
-
-            if (netif_is_link_up(networkInterface))
-            {
-                Link_callback(networkInterface);
-            }
-#endif
-#if LWIP_NETIF_STATUS_CALLBACK == 1
-            netif_set_status_callback(networkInterface, Status_callback);
-
-            if (netif_is_up(networkInterface))
-            {
-                Status_callback(networkInterface);
-            }
-#endif
-
-            // default debugger interface
-            if (0 == i)
-            {
-#if LWIP_IPV6
-                // uint8_t* addr = (uint8_t*)&networkInterface->ip_addr.u_addr.ip4.addr;
-#else
-                // uint8_t* addr = (uint8_t*)&networkInterface->ip_addr.addr;
-#endif
-                //                lcd_printf("\f\n\n\n\n\n\n\nip address: %d.%d.%d.%d\r\n", addr[0], addr[1], addr[2],
-                //                addr[3]);
-                // FIXME               debug_printf("ip address from interface info: %d.%d.%d.%d\r\n", addr[0], addr[1],
-                // addr[2], addr[3]);
-            }
-        }
+        InitializeInterfaceIndex(i, interfaceNumber, networkConfiguration);
     }
 
-    return TRUE;
+    return true;
 }
 
 bool LWIP_SOCKETS_Driver::Uninitialize()
@@ -333,8 +363,7 @@ bool LWIP_SOCKETS_Driver::Uninitialize()
         Network_Interface_Close(i);
     }
 
-    // FIXME    tcpip_shutdown();
-    // tcpip_shutdown is MS method added to lwip tcpip.c
+    nanoHAL_Network_Uninitialize();
 
     return TRUE;
 }
@@ -415,7 +444,6 @@ sockaddr *Sock_SockaddrToSockaddrV6(const SOCK_sockaddr *ssa, sockaddr_in6 *sai,
     }
 
     sai->sin6_scope_id = ((SOCK_sockaddr_in6 *)ssa)->scopeId;
-
     *addrLen = sizeof(sockaddr_in6);
     return (sockaddr *)sai;
 }
@@ -964,6 +992,12 @@ int LWIP_SOCKETS_Driver::SetSockOpt(SOCK_SOCKET socket, int level, int optname, 
             nativeLevel = IPPROTO_IP;
             nativeOptionName = GetNativeIPOption(optname);
             break;
+#if LWIP_IPV6
+        case SOCK_IPPROTO_IPV6:
+            nativeLevel = IPPROTO_IPV6;
+            nativeOptionName = GetNativeIPV6Option(optname);
+            break;
+#endif
         case SOCK_IPPROTO_TCP:
             nativeLevel = IPPROTO_TCP;
             nativeOptionName = GetNativeTcpOption(optname);
@@ -1043,6 +1077,12 @@ int LWIP_SOCKETS_Driver::GetSockOpt(SOCK_SOCKET socket, int level, int optname, 
             nativeLevel = IPPROTO_IP;
             nativeOptionName = GetNativeIPOption(optname);
             break;
+#if LWIP_IPV6
+        case SOCK_IPPROTO_IPV6:
+            nativeLevel = IPPROTO_IPV6;
+            nativeOptionName = GetNativeIPV6Option(optname);
+            break;
+#endif
         case SOCK_IPPROTO_TCP:
             nativeLevel = IPPROTO_TCP;
             nativeOptionName = GetNativeTcpOption(optname);
@@ -1128,23 +1168,23 @@ int LWIP_SOCKETS_Driver::GetSockName(SOCK_SOCKET socket, SOCK_sockaddr *name, in
 int LWIP_SOCKETS_Driver::RecvFrom(SOCK_SOCKET socket, char *buf, int len, int flags, SOCK_sockaddr *from, int *fromlen)
 {
     NATIVE_PROFILE_PAL_NETWORK();
-    sockaddr *pFrom = NULL;
     int ret;
+    socklen_t addrLen;
 
 #if LWIP_IPV6
     sockaddr_in6 addr;
+    addrLen = sizeof(sockaddr_in6);
 #else
     sockaddr_in addr;
+    addrLen = sizeof(sockaddr_in);
 #endif
 
     if (from)
     {
         Sock_SockaddrToSockaddr(from, (sockaddr *)&addr, fromlen);
-
-        pFrom = (sockaddr *)&addr;
     }
 
-    ret = lwip_recvfrom(socket, buf, len, flags, pFrom, (u32_t *)fromlen);
+    ret = lwip_recvfrom(socket, buf, len, flags, (sockaddr *)&addr, &addrLen);
 
     if (from && ret != SOCK_SOCKET_ERROR)
     {
@@ -1164,9 +1204,13 @@ int LWIP_SOCKETS_Driver::SendTo(
 {
     NATIVE_PROFILE_PAL_NETWORK();
 
+#if LWIP_IPV6
+    sockaddr_in6 addr;
+#else
     sockaddr_in addr;
+#endif
 
-    SOCK_SOCKADDR_TO_SOCKADDR(to, addr, &tolen);
+    Sock_SockaddrToSockaddr(to, (sockaddr *)&addr, &tolen);
 
     return lwip_sendto(socket, buf, len, flags, (sockaddr *)&addr, (u32_t)tolen);
 }
@@ -1248,6 +1292,7 @@ struct dhcp_client_id
     uint8_t clientId[6];
 };
 
+#if !defined(PLATFORM_ESP32)
 HRESULT LWIP_SOCKETS_Driver::UpdateAdapterConfiguration(
     uint32_t interfaceIndex,
     uint32_t updateFlags,
@@ -1298,15 +1343,13 @@ HRESULT LWIP_SOCKETS_Driver::UpdateAdapterConfiguration(
         if (enableDHCP)
         {
             // need to start DHCP
-            if (ERR_OK != dhcp_start(networkInterface))
-            {
-                return CLR_E_FAIL;
-            }
+            // no need to check for return value, even if it fails, it will retry
+            dhcp_start(networkInterface);
         }
         else
         {
             // stop DHCP
-            dhcp_stop(networkInterface);
+            dhcp_release_and_stop(networkInterface);
 
             // need to convert these first
             ip_addr_t ipAddress, mask, gateway;
@@ -1328,25 +1371,13 @@ HRESULT LWIP_SOCKETS_Driver::UpdateAdapterConfiguration(
 
     if (enableDHCP)
     {
-        // developer note: on legacy source there was a hack of trying to renew before release and
-        // also setting the release flag in managed call when the intent was to renew only
-        // nowadays lwIP seems to be doing what is told, so no need for these hacks anymore
-        // also it's NOT possible to renew & release on the same pass, so adding an extra else-if for that
-        // just in case it's request from the managed code
-
         if (0 != (updateFlags & NetworkInterface_UpdateOperation_DhcpRelease))
         {
-            dhcp_release(networkInterface);
+            dhcp_release_and_stop(networkInterface);
         }
         else if (0 != (updateFlags & NetworkInterface_UpdateOperation_DhcpRenew))
         {
             dhcp_renew(networkInterface);
-        }
-        else if (
-            0 !=
-            (updateFlags & (NetworkInterface_UpdateOperation_DhcpRelease | NetworkInterface_UpdateOperation_DhcpRenew)))
-        {
-            return CLR_E_INVALID_PARAMETER;
         }
     }
 #endif
@@ -1363,6 +1394,135 @@ HRESULT LWIP_SOCKETS_Driver::UpdateAdapterConfiguration(
 
     return S_OK;
 }
+#else
+HRESULT LWIP_SOCKETS_Driver::UpdateAdapterConfiguration(
+    uint32_t interfaceIndex,
+    uint32_t updateFlags,
+    HAL_Configuration_NetworkInterface *config)
+{
+    NATIVE_PROFILE_PAL_NETWORK();
+    bool enableDHCP = (config->StartupAddressMode == AddressMode_DHCP);
+
+    struct netif *networkInterface =
+        netif_find_interface(g_LWIP_SOCKETS_Driver.m_interfaces[interfaceIndex].m_interfaceNumber);
+    if (NULL == networkInterface)
+    {
+        return CLR_E_FAIL;
+    }
+
+    esp_netif_t *espNetif = NF_ESP32_GetEspNetif(networkInterface);
+    if (NULL == espNetif)
+    {
+        return CLR_E_FAIL;
+    }
+
+#if LWIP_DNS
+    // when using DHCP do not use the static settings
+    if (0 != (updateFlags & NetworkInterface_UpdateOperation_Dns))
+    {
+        if (config->AutomaticDNS == 0)
+        {
+            // user defined DNS addresses
+            if (config->IPv4DNSAddress1 != 0)
+            {
+                esp_netif_dns_info_t dnsServer;
+                dnsServer.ip.u_addr.ip4.addr = config->IPv4DNSAddress1;
+                dnsServer.ip.type = IPADDR_TYPE_V4;
+
+                esp_netif_set_dns_info(espNetif, ESP_NETIF_DNS_MAIN, &dnsServer);
+            }
+            if (config->IPv4DNSAddress2 != 0)
+            {
+                // need to convert this first
+                esp_netif_dns_info_t dnsServer;
+                dnsServer.ip.u_addr.ip4.addr = config->IPv4DNSAddress2;
+                dnsServer.ip.type = IPADDR_TYPE_V4;
+
+                esp_netif_set_dns_info(espNetif, ESP_NETIF_DNS_FALLBACK, &dnsServer);
+            }
+        }
+    }
+#endif
+
+#if LWIP_DHCP
+    if (0 != (updateFlags & NetworkInterface_UpdateOperation_Dhcp))
+    {
+        if (enableDHCP)
+        {
+            // Make sure DHCP option is enabled for esp_netif
+            espNetif->flags = (esp_netif_flags_t)(espNetif->flags | ESP_NETIF_DHCP_CLIENT);
+
+            // Reset IP address on interface before enabling DHCP
+            ip_addr_t ipAddress, mask, gateway;
+#if LWIP_IPV6
+            ipAddress.u_addr.ip4.addr = 0;
+            mask.u_addr.ip4.addr = 0;
+            gateway.u_addr.ip4.addr = 0;
+#else
+            ipAddress.addr = 0;
+            mask.addr = 0;
+            gateway.addr = 0;
+#endif
+
+            netif_set_addr(
+                networkInterface,
+                (const ip4_addr_t *)&ipAddress,
+                (const ip4_addr_t *)&mask,
+                (const ip4_addr_t *)&gateway);
+
+            // Need to start DHCP
+            // No need to check for return value, even if it fails, it will retry
+            esp_netif_dhcpc_start(espNetif);
+        }
+        else
+        {
+            // stop DHCP, ignore errors
+            esp_netif_dhcpc_stop(espNetif);
+
+            // Get static IPV4 address from config
+            esp_netif_ip_info_t ip_info;
+            ip_info.ip.addr = config->IPv4Address;
+            ip_info.gw.addr = config->IPv4GatewayAddress;
+            ip_info.netmask.addr = config->IPv4NetMask;
+
+            // set interface with our static IP configs, ignore error
+            esp_netif_set_ip_info(espNetif, &ip_info);
+
+            // Make sure DHCP client is disabled in esp_netif
+            espNetif->flags = (esp_netif_flags_t)(espNetif->flags & ~ESP_NETIF_DHCP_CLIENT);
+
+            // Inform DHCP server of change
+            dhcp_inform(networkInterface);
+        }
+    }
+
+    if (enableDHCP)
+    {
+        if (0 != (updateFlags & NetworkInterface_UpdateOperation_DhcpRelease))
+        {
+            esp_netif_dhcpc_stop(espNetif);
+        }
+        else if (0 != (updateFlags & NetworkInterface_UpdateOperation_DhcpRenew))
+        {
+            esp_netif_dhcpc_stop(espNetif);
+            esp_netif_dhcpc_start(espNetif);
+        }
+    }
+#endif
+
+    if (0 != (updateFlags & NetworkInterface_UpdateOperation_Mac))
+    {
+        memcpy(networkInterface->hwaddr, config->MacAddress, NETIF_MAX_HWADDR_LEN);
+        networkInterface->hwaddr_len = NETIF_MAX_HWADDR_LEN;
+
+        // mac address requires stack re-init
+        Network_Interface_Close(interfaceIndex);
+        g_LWIP_SOCKETS_Driver.m_interfaces[interfaceIndex].m_interfaceNumber = Network_Interface_Open(interfaceIndex);
+    }
+
+    return S_OK;
+}
+#endif
 
 int LWIP_SOCKETS_Driver::GetNativeTcpOption(int optname)
 {
@@ -1521,6 +1681,32 @@ int LWIP_SOCKETS_Driver::GetNativeIPOption(int optname)
 
     return nativeOptionName;
 }
+
+#if LWIP_IPV6
+int LWIP_SOCKETS_Driver::GetNativeIPV6Option(int optname)
+{
+    NATIVE_PROFILE_PAL_NETWORK();
+    int nativeOptionName = optname;
+
+    switch (optname)
+    {
+        case SOCK_IPO_ADD_MEMBERSHIP:
+            nativeOptionName = IPV6_ADD_MEMBERSHIP;
+            break;
+        case SOCK_IPO_DROP_MEMBERSHIP:
+            nativeOptionName = IPV6_DROP_MEMBERSHIP;
+            break;
+
+        // allow the C# user to specify LWIP options that our managed enum
+        // doesn't support
+        default:
+            nativeOptionName = optname;
+            break;
+    }
+
+    return nativeOptionName;
+}
+#endif
 
 int LWIP_SOCKETS_Driver::GetNativeError(int error)
 {

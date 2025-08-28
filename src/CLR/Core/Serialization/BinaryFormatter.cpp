@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) .NET Foundation and Contributors
 // Portions Copyright (c) Microsoft Corporation.  All rights reserved.
 // See LICENSE file in the project root for full license information.
@@ -504,6 +504,7 @@ HRESULT CLR_RT_BinaryFormatter::TypeHandler::ReadSignature(int &res)
 
     m_value = NULL;
     m_type = NULL;
+    memset(&m_value_tmp, 0, sizeof(struct CLR_RT_HeapBlock));
 
     if (m_typeForced)
     {
@@ -1141,9 +1142,9 @@ HRESULT CLR_RT_BinaryFormatter::State::CreateInstance(
     NANOCLR_HEADER();
 
     CLR_RT_TypeDef_Instance inst;
-    CLR_RT_TypeDescriptor desc;
+    CLR_RT_TypeDescriptor desc{};
     CLR_RT_TypeDescriptor *pDesc;
-    SerializationHintsAttribute hintsTmp;
+    SerializationHintsAttribute hintsTmp{};
 
     if (type && CLR_RT_ReflectionDef_Index::Convert(*type, inst, NULL))
     {
@@ -1208,14 +1209,14 @@ HRESULT CLR_RT_BinaryFormatter::State::FindHints(SerializationHintsAttribute &hi
 
     if (cls.m_target->flags & CLR_RECORD_TYPEDEF::TD_HasAttributes)
     {
-        CLR_RT_TypeDef_Instance inst;
+        CLR_RT_TypeDef_Instance inst{};
         inst.InitializeFromIndex(g_CLR_RT_WellKnownTypes.m_SerializationHintsAttribute);
-        CLR_RT_AttributeEnumerator en;
+        CLR_RT_AttributeEnumerator en{};
         en.Initialize(cls);
 
         if (en.MatchNext(&inst, NULL))
         {
-            CLR_RT_AttributeParser parser;
+            CLR_RT_AttributeParser parser{};
 
             NANOCLR_CHECK_HRESULT(parser.Initialize(en));
 
@@ -1245,14 +1246,14 @@ HRESULT CLR_RT_BinaryFormatter::State::FindHints(
 
     if (fld.m_target->flags & CLR_RECORD_FIELDDEF::FD_HasAttributes)
     {
-        CLR_RT_TypeDef_Instance inst;
+        CLR_RT_TypeDef_Instance inst{};
         inst.InitializeFromIndex(g_CLR_RT_WellKnownTypes.m_SerializationHintsAttribute);
-        CLR_RT_AttributeEnumerator en;
+        CLR_RT_AttributeEnumerator en{};
         en.Initialize(fld);
 
         if (en.MatchNext(&inst, NULL))
         {
-            CLR_RT_AttributeParser parser;
+            CLR_RT_AttributeParser parser{};
 
             NANOCLR_CHECK_HRESULT(parser.Initialize(en));
 
@@ -1363,6 +1364,9 @@ HRESULT CLR_RT_BinaryFormatter::State::AssignAndFixBoxing(CLR_RT_HeapBlock &dst)
                     case REFLECTION_FIELD:
                         cls = &g_CLR_RT_WellKnownTypes.m_FieldInfo;
                         break;
+
+                    default:
+                        NANOCLR_SET_AND_LEAVE(CLR_E_WRONG_TYPE);
                 }
 
                 //
@@ -1432,8 +1436,9 @@ HRESULT CLR_RT_BinaryFormatter::State::GetValue()
     if (prev->m_array_NeedProcessing)
     {
         CLR_RT_HeapBlock ref;
-        ref.InitializeArrayReferenceDirect(*prev->m_array, prev->m_array_CurrentPos - 1);
         CLR_RT_HeapBlock val;
+
+        ref.InitializeArrayReferenceDirect(*prev->m_array, prev->m_array_CurrentPos - 1);
 
         NANOCLR_CHECK_HRESULT(val.LoadFromReference(ref));
 
@@ -1545,7 +1550,7 @@ HRESULT CLR_RT_BinaryFormatter::State::Advance()
                             case REFLECTION_FIELD:
                             {
                                 CLR_RT_FieldDef_Instance inst;
-                                CLR_RT_TypeDescriptor desc;
+                                CLR_RT_TypeDescriptor desc{};
 
                                 if (!inst.InitializeFromIndex(value->ReflectionDataConst().m_data.m_field))
                                 {
@@ -1673,7 +1678,7 @@ HRESULT CLR_RT_BinaryFormatter::State::AdvanceToTheNextField()
             if ((inst.m_target->flags & CLR_RECORD_FIELDDEF::FD_NotSerialized) == 0)
             {
                 SerializationHintsAttribute hints;
-                CLR_RT_TypeDescriptor desc;
+                CLR_RT_TypeDescriptor desc{};
 
                 if (m_value.m_type->m_flags & CLR_RT_DataTypeLookup::c_Enum)
                 {
@@ -1905,7 +1910,6 @@ HRESULT CLR_RT_BinaryFormatter::Deserialize(
     NANOCLR_HEADER();
 
     CLR_RT_HeapBlock cls;
-
     cls.SetObjectReference(NULL);
 
     // unbox reflection types
