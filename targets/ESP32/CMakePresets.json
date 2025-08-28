@@ -371,7 +371,6 @@
                 "API_nanoFramework.Device.OneWire": "ON",
                 "API_nanoFramework.Device.Bluetooth": "ON",
                 "API_System.Device.I2c.Slave": "ON",
-                "ESP32_RESERVED_RAM_FOR_IDF_ALLOCATION": "180",
                 "ESP32_SPIRAM_FOR_IDF_ALLOCATION": "1024 * 1024"
             }
         },
