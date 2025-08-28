@@ -1014,6 +1014,12 @@
             "displayName": "ESP32_S3_ALL",
             "configurePreset": "ESP32_S3_ALL"
         },
+		{
+            "inherits": "base-user",
+            "name": "ESP32_S3_MELLOW_HALO",
+            "displayName": "ESP32_S3_MELLOW_HALO",
+            "configurePreset": "ESP32_S3_MELLOW_HALO"
+        },
         {
             "inherits": "base-user",
             "name": "ESP32_S3_ALL_UART",
